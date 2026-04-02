@@ -61,8 +61,7 @@ export class Level01Scene extends Phaser.Scene {
     // Respawn if player falls below world
     this.events.on('update', () => {
       if (this.player.y > WORLD_H + 100) {
-        this.player.setPosition(this.spawnX, this.spawnY);
-        (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+        this.player.respawn(this.spawnX, this.spawnY);
       }
     });
   }

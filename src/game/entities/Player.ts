@@ -42,6 +42,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   // -------------------------------------------------------
+  // Respawn — fully reset physics state (call from scene on death/fall)
+  // -------------------------------------------------------
+  respawn(x: number, y: number): void {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.reset(x, y); // resets position, velocity, acceleration
+    body.setGravityY(BALANCE.GRAVITY);
+    this.canDoubleJump = false;
+    this.dashCooldownTimer = 0;
+    this.coyoteTimer = 0;
+    this.jumpBufferTimer = 0;
+    this.wallGraceTimer = 0;
+    this.lastWallDirection = null;
+    this.transitionTo(PlayerState.IDLE);
+  }
+
+  // -------------------------------------------------------
   // Helper: is player standing on ground?
   // -------------------------------------------------------
   isGrounded(): boolean {
@@ -111,9 +127,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.coyoteTimer = Math.max(0, this.coyoteTimer - delta);
     this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - delta);
     this.wallGraceTimer = Math.max(0, this.wallGraceTimer - delta);
-    if (!this.isGrounded()) {
-      this.dashCooldownTimer = Math.max(0, this.dashCooldownTimer - delta);
-    }
+    // dashCooldownTimer does NOT count down in the air — dash refreshes only on landing
   }
 
   // -------------------------------------------------------
@@ -173,6 +187,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.dashCooldownTimer > 0) return;
     if (this.isInState(PlayerState.DASH)) return;
 
+    // Don't dash into a wall already being touched
+    const wallContact = this.isTouchingWall();
+    if ((wallContact === 'right' && this.facing === 'right') ||
+        (wallContact === 'left' && this.facing === 'left')) return;
+
     const body = this.body as Phaser.Physics.Arcade.Body;
     this.dashStartX = this.x;
     this.dashCooldownTimer = BALANCE.DASH_COOLDOWN;
@@ -185,12 +204,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.transitionTo(PlayerState.DASH);
   }
   private handleHorizontalMovement(): void {
+    if (this.isInState(PlayerState.WALL_SLIDE)) return; // don't fight the wall while sliding
     const body = this.body as Phaser.Physics.Arcade.Body;
     const onGround = this.isGrounded();
     const accel = onGround ? BALANCE.GROUND_ACCEL : BALANCE.AIR_ACCEL;
     const decel = onGround ? BALANCE.GROUND_DECEL : BALANCE.AIR_ACCEL * 0.5;
     const leftDown = this.keys.left.isDown;
     const rightDown = this.keys.right.isDown;
+
+    // Prevent pushing into a wall already being touched — avoids arcade physics
+    // "climbing" artifact where repeated separation nudges create upward drift
+    const wallContact = this.isTouchingWall();
+    if ((wallContact === 'left' && leftDown && !rightDown) ||
+        (wallContact === 'right' && rightDown && !leftDown)) {
+      body.setAccelerationX(0);
+      body.setVelocityX(0);
+      return;
+    }
 
     if (leftDown && !rightDown) {
       body.setAccelerationX(-accel);
@@ -217,8 +247,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const falling = body.velocity.y > 0;
     const wallContact = this.isTouchingWall();
 
-    if (onGround) {
-      // Reset air abilities on landing
+    if (onGround && !this.isInState(PlayerState.JUMP, PlayerState.WALL_JUMP)) {
+      // Reset air abilities on landing (guard prevents resetting on the same frame as a jump)
       this.canDoubleJump = false;
       this.dashCooldownTimer = 0;
       this.coyoteTimer = 0;
@@ -263,11 +293,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private updateDash(): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     const travelled = Math.abs(this.x - this.dashStartX);
+    const hitWall = (this.facing === 'right' && body.blocked.right) ||
+                    (this.facing === 'left' && body.blocked.left);
 
-    if (travelled >= BALANCE.DASH_DISTANCE) {
-      // Dash complete — restore gravity and transition
+    if (travelled >= BALANCE.DASH_DISTANCE || hitWall) {
+      // Dash complete (or wall hit) — restore gravity and transition
       body.setGravityY(BALANCE.GRAVITY);
-      body.setVelocityX(this.facing === 'right' ? BALANCE.MOVE_SPEED * 0.5 : -BALANCE.MOVE_SPEED * 0.5);
+      body.setVelocityX(0);
       body.setVelocityY(0);
       this.transitionTo(this.isGrounded() ? PlayerState.RUN : PlayerState.FALL);
     }
