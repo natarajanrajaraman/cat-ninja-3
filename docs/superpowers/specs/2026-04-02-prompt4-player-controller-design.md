@@ -161,6 +161,31 @@ Input is passed in from the scene — Player does not own the input manager.
 
 ---
 
+## Sprite Sheet
+
+**File:** `public/assets/Sprites/Sprites CatNinja.png` (1024×1024)
+**Frame size:** 64×64px (16 columns × 16 rows)
+
+Animations used in Prompt 4 (movement only):
+
+| State | Animation key | Row | Frames | Loop |
+|---|---|---|---|---|
+| IDLE | `idle` | 0 | 0–3 | yes |
+| RUN | `walk` | 1 | 0–7 | yes |
+| JUMP (rising) | `jump_start` | 2 | 0–1 | no |
+| JUMP (air) | `jump_air` | 2 | 2–3 | yes |
+| FALL | `jump_fall` | 2 | 4–7 | no |
+| DOUBLE_JUMP | `spin_start` | 3 | 0–2 | no |
+| DOUBLE_JUMP (air) | `spin_air` | 3 | 3–6 | yes |
+| WALL_SLIDE | `jump_air` | 2 | 2–3 | yes (hold) |
+| DASH | `flying_kick` | 7 | 5–6 | yes |
+| DEAD | `dead` | 4 | 0–6 | no |
+
+Animations are defined once in `PreloadScene` and created in `Player.create()`.
+Sprites face right by default. Flip `scaleX` to -1 when facing left.
+
+---
+
 ## Success Criteria
 
 - Moving around the graybox room feels satisfying before any enemies exist
