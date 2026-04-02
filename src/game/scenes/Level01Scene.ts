@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Player } from '../entities/Player';
 import { DummyEnemy } from '../entities/DummyEnemy';
 import { CombatSystem } from '../systems/CombatSystem';
+import { SlowMoSystem } from '../systems/SlowMoSystem';
 import { INPUT } from '../config/inputConfig';
 import { BALANCE } from '../config/balanceConfig';
 
@@ -10,6 +11,7 @@ export class Level01Scene extends Phaser.Scene {
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private enemiesGroup!: Phaser.Physics.Arcade.Group;
   private combatSystem!: CombatSystem;
+  private slowMo!: SlowMoSystem;
   private spawnX = 96;
   private spawnY = 804;
   private prevMouseDown = false;
@@ -81,6 +83,13 @@ export class Level01Scene extends Phaser.Scene {
       }
     });
 
+    // Launch UIScene overlay
+    this.scene.launch('UIScene');
+
+    // Wire slow-mo system
+    this.slowMo = new SlowMoSystem(this);
+    this.events.once('shutdown', () => this.slowMo.destroy());
+
     // Level music
     this.sound.play('music_level1', { loop: true, volume: 0.5 });
 
@@ -144,14 +153,18 @@ export class Level01Scene extends Phaser.Scene {
     const isDown = pointer.leftButtonDown();
 
     // Fire only on transition from not-pressed to pressed
-    if (isDown && !this.prevMouseDown && this.player.consumeAmmo()) {
+    // canFire() checked before consumeAmmo() to avoid consuming ammo when locked
+    if (isDown && !this.prevMouseDown && this.slowMo.canFire() && this.player.consumeAmmo()) {
       this.combatSystem.fireShuriken(
         this.player.x, this.player.y,
         pointer.worldX, pointer.worldY,
       );
+      this.slowMo.onFired();
+      this.game.events.emit('slowmo-shot');
       this.game.events.emit('ammo-changed', this.player.getAmmo());
     }
 
     this.prevMouseDown = isDown;
+    this.slowMo.update(pointer);
   }
 }
