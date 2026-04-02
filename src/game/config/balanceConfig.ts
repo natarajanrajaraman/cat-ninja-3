@@ -18,6 +18,9 @@ export const BALANCE = {
   DASH_SPEED: 900,           // px/s during dash
   DASH_COOLDOWN: 600,        // ms cooldown after dash ends (resets on land)
 
+  // --- Slow-motion aim ---
+  SLOWMO_TIMESCALE: 0.35,    // time scale while right-click held (1.0 = normal)
+
   // --- Fairness timings ---
   COYOTE_TIME: 100,          // ms: jump valid after walking off ledge
   JUMP_BUFFER_TIME: 100,     // ms: jump input queued before landing
