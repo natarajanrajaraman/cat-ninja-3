@@ -14,13 +14,44 @@ export class PreloadScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    // CatNinja (already loaded)
     this.load.spritesheet('catninja', 'assets/Sprites/Sprites CatNinja.png', {
       frameWidth: 64,
       frameHeight: 64,
     });
+
+    // Shuriken sprite sheet — inspect image if anim looks wrong (try 64x64 first)
+    this.load.spritesheet('shuriken', 'assets/Sprites/Sprites Shuriken.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+
+    // Shuriken launch SFX
+    this.load.audio('shuriken_1', 'assets/SoundEffects/shuriken launch/sword.1.ogg');
+    this.load.audio('shuriken_2', 'assets/SoundEffects/shuriken launch/sword.2.ogg');
+    this.load.audio('shuriken_3', 'assets/SoundEffects/shuriken launch/sword.3.ogg');
+    this.load.audio('shuriken_4', 'assets/SoundEffects/shuriken launch/sword.4.ogg');
+    this.load.audio('shuriken_5', 'assets/SoundEffects/shuriken launch/sword.5.ogg');
+
+    // Claw SFX
+    this.load.audio('claw_1', 'assets/SoundEffects/claw launch/Socapex - Monster_Hurt.wav');
+    this.load.audio('claw_2', 'assets/SoundEffects/claw launch/Socapex - new_hits_2.wav');
+    this.load.audio('claw_3', 'assets/SoundEffects/claw launch/Socapex - new_hits_5.wav');
+    this.load.audio('claw_4', 'assets/SoundEffects/claw launch/Socapex - new_hits_7.wav');
+    this.load.audio('claw_5', 'assets/SoundEffects/claw launch/Socapex - new_hits_8.wav');
+
+    // Level 1 music
+    this.load.audio('music_level1', 'assets/Music/BlackTrendMusic - Sport Games.mp3');
   }
 
   create(): void {
+    // 1×1 white pixel texture used by DummyEnemy (tinted at runtime)
+    const pixelData = this.textures.generate('pixel', {
+      data: ['#'],
+      pixelWidth: 1,
+    });
+    void pixelData; // suppress unused-variable warning
+
     this.createAnimations();
     this.scene.start('MenuScene');
   }
@@ -97,6 +128,26 @@ export class PreloadScene extends Phaser.Scene {
       key: 'dead',
       frames: anims.generateFrameNumbers('catninja', { start: 64, end: 70 }),
       frameRate: 10,
+      repeat: 0,
+    });
+
+    // --- Shuriken spin (all frames, fast loop) ---
+    // Sheet is 2816×1536 at 64×64 = 44 cols × 24 rows = 1056 frames.
+    // We use frames 0–15 (first row) for a 16-frame spin; adjust if it looks wrong.
+    anims.create({
+      key: 'shuriken_spin',
+      frames: anims.generateFrameNumbers('shuriken', { start: 0, end: 15 }),
+      frameRate: 16,
+      repeat: -1,
+    });
+
+    // --- Claw attack: CatNinja rows 5–6 ---
+    // Row 5 = frames 80–95, row 6 = frames 96–111 (64px wide, 16 per row).
+    // Use first 4 frames of row 5 (80–83) as a minimal claw strike; extend if row has more distinct frames.
+    anims.create({
+      key: 'claw',
+      frames: anims.generateFrameNumbers('catninja', { start: 80, end: 83 }),
+      frameRate: 16,
       repeat: 0,
     });
   }
