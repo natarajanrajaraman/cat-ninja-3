@@ -22,4 +22,22 @@ export const BALANCE = {
   COYOTE_TIME: 100,          // ms: jump valid after walking off ledge
   JUMP_BUFFER_TIME: 100,     // ms: jump input queued before landing
   WALL_GRACE_TIME: 80,       // ms: wall jump valid after leaving wall
+
+  // --- Claw ---
+  CLAW_DAMAGE: 25,
+  CLAW_ACTIVE_MS: 150,       // how long hitbox is live
+  CLAW_RECOVERY_MS: 200,     // locked-out after active window
+  CLAW_COOLDOWN_MS: 400,     // full cooldown from press to next press
+  CLAW_RANGE: 60,            // hitbox width in front of player
+
+  // --- Shuriken ---
+  SHURIKEN_DAMAGE: 15,
+  SHURIKEN_SPEED: 800,       // px/s initial velocity
+  SHURIKEN_GRAVITY: 400,     // lighter than player gravity for parabolic arc
+  SHURIKEN_FIRE_COOLDOWN: 250, // ms between shots
+  SHURIKEN_MAX_AMMO: 10,
+  SHURIKEN_LIFETIME: 2500,   // ms before auto-destroy if no hit
+
+  // --- Dummy enemy ---
+  DUMMY_HEALTH: 50,
 } as const;
