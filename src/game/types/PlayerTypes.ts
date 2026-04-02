@@ -18,4 +18,5 @@ export interface PlayerKeys {
   right: Phaser.Input.Keyboard.Key;
   jump: Phaser.Input.Keyboard.Key;
   dash: Phaser.Input.Keyboard.Key;
+  attack: Phaser.Input.Keyboard.Key;
 }

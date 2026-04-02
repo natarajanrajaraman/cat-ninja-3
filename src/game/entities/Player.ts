@@ -21,8 +21,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // --- Input (owned by scene, passed in constructor) ---
   private readonly keys: PlayerKeys;
 
-  // --- Combat (claw hitbox initialized in Task 7) ---
-  public clawHitbox: Phaser.Physics.Arcade.Image = null!;
+  // --- Claw attack overlay ---
+  private attackTimer: number = 0;
+  private clawCooldownTimer: number = 0;
+  public clawHitbox!: Phaser.Physics.Arcade.Image;
+
+  // --- Shuriken ammo ---
+  private ammo: number = 0; // initialized to SHURIKEN_MAX_AMMO in constructor
+  private shurikenCooldownTimer: number = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, keys: PlayerKeys) {
     super(scene, x, y, 'catninja');
@@ -42,6 +48,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.setOrigin(0.5, 0.5);
     this.play('idle');
+
+    // Claw hitbox — invisible, disabled until attack fires
+    this.clawHitbox = scene.physics.add.image(x, y, '__DEFAULT') as Phaser.Physics.Arcade.Image;
+    this.clawHitbox.setVisible(false);
+    (this.clawHitbox.body as Phaser.Physics.Arcade.Body).setSize(
+      BALANCE.CLAW_RANGE,
+      36,
+    );
+    (this.clawHitbox.body as Phaser.Physics.Arcade.Body).enable = false;
+
+    this.ammo = BALANCE.SHURIKEN_MAX_AMMO;
   }
 
   // -------------------------------------------------------
@@ -57,6 +74,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.jumpBufferTimer = 0;
     this.wallGraceTimer = 0;
     this.lastWallDirection = null;
+    this.attackTimer = 0;
+    this.clawCooldownTimer = 0;
+    this.shurikenCooldownTimer = 0;
+    this.ammo = BALANCE.SHURIKEN_MAX_AMMO;
+    (this.clawHitbox.body as Phaser.Physics.Arcade.Body).enable = false;
     this.transitionTo(PlayerState.IDLE);
   }
 
@@ -117,11 +139,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.handleJumpInput();
       this.handleDashInput();
+      this.handleAttackInput();
       this.handleHorizontalMovement();
       this.updatePhysicsState();
     }
 
     this.updateFacing();
+    this.updateClawHitbox();
     this.updateAnimation();
   }
 
@@ -130,6 +154,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.coyoteTimer = Math.max(0, this.coyoteTimer - delta);
     this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - delta);
     this.wallGraceTimer = Math.max(0, this.wallGraceTimer - delta);
+    this.attackTimer = Math.max(0, this.attackTimer - delta);
+    this.clawCooldownTimer = Math.max(0, this.clawCooldownTimer - delta);
+    this.shurikenCooldownTimer = Math.max(0, this.shurikenCooldownTimer - delta);
     // dashCooldownTimer does NOT count down in the air — dash refreshes only on landing
   }
 
@@ -205,6 +232,39 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setGravityY(-BALANCE.GRAVITY); // neutralise gravity during dash
     body.setAccelerationX(0);
     this.transitionTo(PlayerState.DASH);
+  }
+  private handleAttackInput(): void {
+    if (this.clawCooldownTimer > 0) return;
+    if (!Phaser.Input.Keyboard.JustDown(this.keys.attack)) return;
+
+    this.attackTimer = BALANCE.CLAW_ACTIVE_MS + BALANCE.CLAW_RECOVERY_MS;
+    this.clawCooldownTimer = BALANCE.CLAW_COOLDOWN_MS;
+
+    // Enable hitbox
+    (this.clawHitbox.body as Phaser.Physics.Arcade.Body).enable = true;
+
+    // Play random claw sound
+    this.playRandomSound(['claw_1', 'claw_2', 'claw_3', 'claw_4', 'claw_5']);
+
+    // Play claw animation
+    this.play('claw', true);
+  }
+  private playRandomSound(keys: string[]): void {
+    const key = keys[Math.floor(Math.random() * keys.length)];
+    this.scene.sound.play(key, { volume: 0.7 });
+  }
+
+  getAmmo(): number {
+    return this.ammo;
+  }
+
+  /** Returns false if ammo is 0 or fire cooldown is active. On success, decrements ammo. */
+  consumeAmmo(): boolean {
+    if (this.ammo <= 0) return false;
+    if (this.shurikenCooldownTimer > 0) return false;
+    this.ammo -= 1;
+    this.shurikenCooldownTimer = BALANCE.SHURIKEN_FIRE_COOLDOWN;
+    return true;
   }
   private handleHorizontalMovement(): void {
     if (this.isInState(PlayerState.WALL_SLIDE)) return; // don't fight the wall while sliding
@@ -307,6 +367,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.transitionTo(this.isGrounded() ? PlayerState.RUN : PlayerState.FALL);
     }
   }
+  private updateClawHitbox(): void {
+    const body = this.clawHitbox.body as Phaser.Physics.Arcade.Body;
+
+    // Disable hitbox once active window expires
+    if (this.attackTimer <= BALANCE.CLAW_RECOVERY_MS) {
+      body.enable = false;
+    }
+
+    // Reposition hitbox in front of player each frame
+    const offsetX = this.facing === 'right'
+      ? this.x + BALANCE.CLAW_RANGE / 2
+      : this.x - BALANCE.CLAW_RANGE / 2;
+    this.clawHitbox.setPosition(offsetX, this.y);
+    body.reset(offsetX, this.y);
+  }
   private updateFacing(): void {
     if (this.isInState(PlayerState.DASH, PlayerState.WALL_SLIDE)) return;
     const leftDown = this.keys.left.isDown;
@@ -322,6 +397,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   private updateAnimation(): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
+
+    // Claw animation overrides all movement animations during the strike window
+    if (this.attackTimer > BALANCE.CLAW_RECOVERY_MS) {
+      this.play('claw', true);
+      return;
+    }
 
     switch (this._state) {
       case PlayerState.IDLE:
@@ -345,8 +426,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         break;
       case PlayerState.DOUBLE_JUMP:
-        // spin_start → spin_air handled by completion event in handleJumpInput
-        // Just ensure spin_air keeps looping while in air
         if (this.anims.currentAnim?.key === 'spin_start' && this.anims.currentFrame?.isLast) {
           this.play('spin_air', true);
         } else if (this.anims.currentAnim?.key !== 'spin_start') {
@@ -355,7 +434,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       case PlayerState.WALL_SLIDE:
         this.play('jump_air', true);
-        // Flip facing toward the wall
         this.setFlipX(this.lastWallDirection === 'right');
         break;
       case PlayerState.WALL_JUMP:
