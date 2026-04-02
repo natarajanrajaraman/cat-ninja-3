@@ -1,0 +1,50 @@
+Section,Parameter,Initial Test Value,Notes,Last Updated
+Player Core Stats,Max Health,TBD,Health bar total,TBD
+Player Core Stats,Starting Lives per Level,9,Fixed current design,TBD
+Player Core Stats,Move Speed,TBD,Ground movement speed,TBD
+Player Core Stats,Ground Acceleration,TBD,Heavier but responsive,TBD
+Player Core Stats,Ground Deceleration,TBD,Avoid excessive sliding,TBD
+Player Core Stats,Jump Velocity,TBD,Base jump strength,TBD
+Player Core Stats,Gravity,TBD,Should feel heavy,TBD
+Player Core Stats,Double Jump Velocity,TBD,Slightly weaker than base jump,TBD
+Player Core Stats,Wall Jump Horizontal Force,TBD,Must feel reliable,TBD
+Player Core Stats,Wall Jump Vertical Force,TBD,Must support intended routes,TBD
+Player Core Stats,Dash Speed,TBD,Core burst value,TBD
+Player Core Stats,Dash Duration,TBD,Or convert to fixed distance,TBD
+Player Combat Stats,Claw Damage,TBD,Precise melee punish value,TBD
+Player Combat Stats,Claw Startup,TBD,Should feel quick,TBD
+Player Combat Stats,Claw Active Window,TBD,Brief and clear,TBD
+Player Combat Stats,Claw Recovery,TBD,Prevent spam,TBD
+Player Combat Stats,Shuriken Max Ammo,10,Locked design choice,TBD
+Player Combat Stats,Shuriken Damage,TBD,Precision ranged baseline,TBD
+Player Combat Stats,Shuriken Speed,TBD,Should feel fast and clean,TBD
+Player Combat Stats,Shuriken Fire Delay,TBD,Tune to avoid spam,TBD
+Player Combat Stats,Dash Collision Damage,TBD,Must be meaningful but not dominant,TBD
+Frenzy Mode,Frenzy Charge Capacity,1,Recommended MVP default,TBD
+Frenzy Mode,Frenzy Duration,TBD,Must feel worth using,TBD
+Frenzy Mode,Frenzy Move Speed Multiplier,TBD,Keep readable,TBD
+Frenzy Mode,Frenzy Attack Speed Multiplier,TBD,Noticeable improvement,TBD
+Frenzy Mode,Frenzy Damage Multiplier,TBD,Strong but not broken,TBD
+Hairball Super,Super Charge Time,TBD,Time-based fill,TBD
+Hairball Super,Full-Screen Damage,TBD,All enemies baseline damage,TBD
+Hairball Super,Frontal Blast Bonus Damage,TBD,Stronger front cone,TBD
+Hairball Super,Knockback Force,TBD,Should feel dramatic,TBD
+Pickups,Catfood Heal Amount,TBD,Health restore amount,TBD
+Pickups,Shuriken Pickup Restore Amount,TBD,Likely 2–5 test range,TBD
+Pickups,Catnip Grant Amount,1 Frenzy Charge,Current design assumption,TBD
+Enemy Stats — Granny Melee,Health,TBD,Low-to-mid durability,TBD
+Enemy Stats — Granny Melee,Attack Damage,TBD,Main threat value,TBD
+Enemy Stats — Granny Melee,Attack Startup,TBD,Must telegraph cleanly,TBD
+Enemy Stats — Granny Melee,Attack Recovery,TBD,Creates punish window,TBD
+Enemy Stats — Granny Ranged,Health,TBD,Similar or slightly lower than melee granny,TBD
+Enemy Stats — Granny Ranged,Projectile Damage,TBD,Threat via spacing,TBD
+Enemy Stats — Granny Ranged,Projectile Speed,TBD,Readable but meaningful,TBD
+Enemy Stats — Granny Ranged,Throw Startup,TBD,Telegraph window,TBD
+Boss Stats — Laser T-Rex,Boss Health,TBD,One-phase miniboss target,TBD
+Boss Stats — Laser T-Rex,Laser Damage,TBD,Major attack threat,TBD
+Boss Stats — Laser T-Rex,Stomp/Shockwave Damage,TBD,Jump timing test,TBD
+Boss Stats — Laser T-Rex,Laser Telegraph Duration,TBD,Must be fair,TBD
+Economy / Encounter Tuning,Average Ammo Pickups per Level,TBD,Supports medium scarcity,TBD
+Economy / Encounter Tuning,Average Catfood Pickups per Level,TBD,Supports learning/recovery,TBD
+Economy / Encounter Tuning,Average Catnip Pickups per Level,TBD,"Should feel important, not constant",TBD
+Economy / Encounter Tuning,Checkpoint Count,1–2,Current design target,TBD
