@@ -9,8 +9,8 @@ import { VictoryScene } from '../scenes/VictoryScene';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 1280,
-  height: 720,
+  width: 960,
+  height: 540,
   backgroundColor: '#1a1a2e',
   pixelArt: true,
   antialias: false,
