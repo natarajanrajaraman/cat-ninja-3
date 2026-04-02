@@ -88,7 +88,10 @@ export class Level01Scene extends Phaser.Scene {
 
     // Wire slow-mo system
     this.slowMo = new SlowMoSystem(this);
-    this.events.once('shutdown', () => this.slowMo.destroy());
+    this.events.once('shutdown', () => {
+      this.slowMo.destroy();
+      this.scene.stop('UIScene');
+    });
 
     // Level music
     this.sound.play('music_level1', { loop: true, volume: 0.5 });
