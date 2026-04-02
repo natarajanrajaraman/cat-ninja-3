@@ -1,7 +1,7 @@
 # Prompt 5 — Combat Prototype Design
 
 **Date:** 2026-04-02
-**Scope:** First combat prototype — claw strike, shuriken, dummy enemy, ammo UI, Level 1 music. No frenzy, checkpoints, health bar, or boss.
+**Scope:** First combat prototype — claw strike, shuriken, dummy enemy, floating HP bars, ammo UI, Level 1 music. No frenzy, checkpoints, lives, or boss.
 
 ---
 
@@ -19,6 +19,7 @@ CombatSystem class (not a Phaser scene) owned by Level01Scene. Player and enemie
 | Create | `src/game/systems/CombatSystem.ts` | Overlap setup, shuriken pool, damage routing |
 | Create | `src/game/entities/Shuriken.ts` | Projectile sprite with arc physics and random launch sound |
 | Create | `src/game/entities/DummyEnemy.ts` | Static placeholder enemy with health and flash-on-hit |
+| Create | `src/game/objects/HealthBar.ts` | Reusable floating HP bar — attaches to any entity, used by DummyEnemy now and Player in Prompt 7 |
 | Modify | `src/game/entities/Player.ts` | Attack overlay (timer-based), claw hitbox, ammo, random claw sound |
 | Modify | `src/game/scenes/PreloadScene.ts` | Load shuriken sheet, all SFX, music; define shuriken spin animation |
 | Modify | `src/game/scenes/Level01Scene.ts` | Create CombatSystem, spawn enemies, handle left-click fire, start music |
@@ -251,13 +252,59 @@ this.load.audio('music_level1', 'assets/Music/BlackTrendMusic - Sport Games.mp3'
 
 ---
 
+## HealthBar
+
+`HealthBar` is a plain class (not a Phaser GameObject). It owns a `Phaser.GameObjects.Graphics` object and updates it each frame.
+
+```ts
+class HealthBar {
+  constructor(scene: Phaser.Scene, width: number, yOffset: number)
+  update(x: number, y: number, current: number, max: number): void
+  destroy(): void
+}
+```
+
+### Layout
+- Background bar: dark gray, `width × 6px`
+- Fill bar: green → yellow → red based on percentage (>50% green, 25–50% yellow, <25% red)
+- Positioned `yOffset` pixels above the owner's `y` (e.g. -40 for enemies, -50 for player)
+- Centered horizontally on owner's `x`
+- Hidden when `current >= max` (full health, no clutter)
+
+### Usage in DummyEnemy
+```ts
+private healthBar: HealthBar;
+
+constructor(scene, x, y) {
+  // ... sprite setup
+  this.healthBar = new HealthBar(scene, 48, -40);
+}
+
+takeDamage(amount) {
+  this.health -= amount;
+  this.healthBar.update(this.x, this.y, this.health, BALANCE.DUMMY_HEALTH);
+  // flash + destroy logic
+}
+
+// Called from Level01Scene.update() or preUpdate override
+preUpdate(time, delta) {
+  super.preUpdate(time, delta);
+  this.healthBar.update(this.x, this.y, this.health, BALANCE.DUMMY_HEALTH);
+}
+```
+
+### Reuse in Prompt 7 (Player)
+Player will call `this.healthBar.update(this.x, this.y, this.health, BALANCE.PLAYER_MAX_HEALTH)` in its `update()` method once the health system is added. No changes to `HealthBar` needed.
+
+---
+
 ## Success Criteria
 
 - J key triggers a claw strike with hitbox, sound, and animation
 - Left-click fires a shuriken that arcs with gravity and hits enemies
 - Shuriken ammo decrements from 10 to 0; firing at 0 does nothing
 - Ammo counter in UIScene updates in real time
-- DummyEnemies flash red on hit and disappear at 0 HP
+- DummyEnemies flash red on hit, show a floating HP bar that shrinks as damage is taken, and disappear at 0 HP
 - Level 1 music plays on loop
 - All values tunable via balanceConfig
 - No TypeScript errors, build passes
