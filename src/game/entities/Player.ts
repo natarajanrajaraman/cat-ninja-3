@@ -21,6 +21,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // --- Input (owned by scene, passed in constructor) ---
   private readonly keys: PlayerKeys;
 
+  // --- Combat (claw hitbox initialized in Task 7) ---
+  public clawHitbox: Phaser.Physics.Arcade.Image = null!;
+
   constructor(scene: Phaser.Scene, x: number, y: number, keys: PlayerKeys) {
     super(scene, x, y, 'catninja');
     this.keys = keys;
