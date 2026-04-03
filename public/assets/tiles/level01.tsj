@@ -1,0 +1,14 @@
+{ "columns":16,
+ "image":"kenney_pixel-platformer-industrial-expansion\/Tilemap\/tilemap_packed.png",
+ "imageheight":126,
+ "imagewidth":288,
+ "margin":0,
+ "name":"tilemap_packed",
+ "spacing":0,
+ "tilecount":112,
+ "tiledversion":"1.12.1",
+ "tileheight":18,
+ "tilewidth":18,
+ "type":"tileset",
+ "version":"1.10"
+}
