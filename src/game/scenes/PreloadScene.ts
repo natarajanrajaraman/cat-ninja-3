@@ -20,11 +20,8 @@ export class PreloadScene extends Phaser.Scene {
       frameHeight: 64,
     });
 
-    // Shuriken sprite sheet — 1950×1300, 6 cols × 4 rows, 325×325 per frame
-    this.load.spritesheet('shuriken', 'assets/Sprites/Sprites Shurikens.png', {
-      frameWidth: 325,
-      frameHeight: 325,
-    });
+    // Shuriken — cropped single frame (48×48) from top-right of Sprites Shurikens.png
+    this.load.image('shuriken', 'assets/Sprites/Shuriken.png');
 
     // Shuriken launch SFX
     this.load.audio('shuriken_1', 'assets/SoundEffects/shuriken launch/sword.1.ogg');
@@ -131,13 +128,7 @@ export class PreloadScene extends Phaser.Scene {
       repeat: 0,
     });
 
-    // --- Shuriken spin — top-right 3 frames (indices 3, 4, 5) from 6-col sheet ---
-    anims.create({
-      key: 'shuriken_spin',
-      frames: anims.generateFrameNumbers('shuriken', { start: 3, end: 5 }),
-      frameRate: 12,
-      repeat: -1,
-    });
+    // Shuriken is a plain image — rotation is handled in Shuriken.update(), no animation needed.
 
     // --- Claw attack: CatNinja rows 5–6 ---
     // Row 5 = frames 80–95, row 6 = frames 96–111 (64px wide, 16 per row).

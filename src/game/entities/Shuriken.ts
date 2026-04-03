@@ -10,15 +10,13 @@ export class Shuriken extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Frames are 325×325 — scale down to a sensible in-game size
+    // Image is 48×48 — render at 32×32 in-game
     this.setDisplaySize(32, 32);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setAllowGravity(true);
-    body.setGravityY(BALANCE.SHURIKEN_GRAVITY);
+    // Note: gravity is set via the PhysicsGroup config in CombatSystem (gravityY),
+    // because the group's createCallbackHandler would overwrite any value set here.
     body.setSize(20, 20); // hitbox smaller than display to feel fair
-
-    this.play('shuriken_spin');
 
     // Random launch sound
     const key = LAUNCH_SOUNDS[Math.floor(Math.random() * LAUNCH_SOUNDS.length)];
@@ -28,6 +26,11 @@ export class Shuriken extends Phaser.Physics.Arcade.Sprite {
     scene.time.delayedCall(BALANCE.SHURIKEN_LIFETIME, () => {
       if (this.active) this.destroy();
     });
+  }
+
+  // Called each frame by the group (runChildUpdate: true)
+  update(_time: number, delta: number): void {
+    this.angle += 540 * (delta / 1000); // ~1.5 rotations per second
   }
 
   setVelocityToward(fromX: number, fromY: number, toX: number, toY: number): void {

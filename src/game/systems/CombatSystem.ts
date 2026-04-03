@@ -19,6 +19,9 @@ export class CombatSystem {
     this.shurikenGroup = scene.physics.add.group({
       classType: Shuriken,
       runChildUpdate: true,
+      // gravityY must be set here — createCallbackHandler overwrites any value set in the
+      // Shuriken constructor when the object is added to this group.
+      gravityY: BALANCE.SHURIKEN_GRAVITY,
     });
 
     // 1. Claw hits enemies

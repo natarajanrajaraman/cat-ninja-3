@@ -47,11 +47,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setGravityY(BALANCE.GRAVITY);
     body.setCollideWorldBounds(false);
 
-    // Shrink physics body slightly for better feel (sprite is 64x64)
+    // Body sized to cover torso+legs; offset.y=4 aligns body-bottom with visual feet
+    // (feet sit ~12px above the 64px frame bottom; at scale=2 that = 24px gap without this fix)
     body.setSize(28, 48);
-    body.setOffset(18, 16);
+    body.setOffset(18, 4);
 
     this.setOrigin(0.5, 0.5);
+    this.setScale(2); // render at 128×128; physics body auto-scales with sprite scale
     this.play('idle');
 
     // Claw hitbox — invisible, disabled until attack fires
@@ -307,7 +309,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const vx = this.facing === 'right' ? BALANCE.DASH_SPEED : -BALANCE.DASH_SPEED;
     body.setVelocityX(vx);
     body.setVelocityY(0);
-    body.setGravityY(0); // zero body gravity during dash (world gravity is also 0, net = 0)
+    body.setGravityY(BALANCE.GRAVITY); // gravity applies during dash — player arcs downward
     body.setAccelerationX(0);
     this.transitionTo(PlayerState.DASH);
   }
@@ -369,11 +371,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       body.setAccelerationX(accel);
     } else {
       body.setAccelerationX(0);
-      // Apply manual deceleration toward zero
+      // Decelerate toward zero without overshooting (old code could flip sign → oscillating creep)
       if (Math.abs(body.velocity.x) > 0) {
-        const dir = body.velocity.x > 0 ? -1 : 1;
-        const newVx = body.velocity.x + dir * decel * (1 / 60);
-        body.setVelocityX(Math.abs(newVx) < 4 ? 0 : newVx);
+        const reduction = decel * (delta / 1000);
+        if (Math.abs(body.velocity.x) <= reduction) {
+          body.setVelocityX(0);
+        } else {
+          body.setVelocityX(body.velocity.x - Math.sign(body.velocity.x) * reduction);
+        }
       }
     }
 

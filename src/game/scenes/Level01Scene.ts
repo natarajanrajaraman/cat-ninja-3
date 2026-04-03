@@ -14,10 +14,18 @@ export class Level01Scene extends Phaser.Scene {
   private combatSystem!: CombatSystem;
   private slowMo!: SlowMoSystem;
   private spawnX = 96;
-  private spawnY = 804;
+  private spawnY = 790; // body.bottom = y+40 at scale=2; ground top=836; this spawns 6px above
   private prevMouseDown = false;
   private lives = BALANCE.PLAYER_MAX_LIVES;
-  private deathPending = false; // guard: only handle one death at a time
+  private deathPending = false;
+
+  // Floating HUD (world-space, follows player)
+  private floatHpBg!: Phaser.GameObjects.Rectangle;
+  private floatHpFill!: Phaser.GameObjects.Rectangle;
+  private floatAmmoBar!: Phaser.GameObjects.Graphics;
+  private static readonly FLOAT_BAR_W = 48;
+  private static readonly FLOAT_BAR_H = 5;
+  private static readonly FLOAT_Y_OFFSET = 52; // px above player.y (body-bottom is at y+40, top at y-56)
 
   constructor() {
     super({ key: 'Level01Scene' });
@@ -84,6 +92,13 @@ export class Level01Scene extends Phaser.Scene {
         this.player.takeDamage(BALANCE.PLAYER_MAX_HEALTH);
       }
     });
+
+    // --- Floating HUD (world-space, above player) ---
+    const BW = Level01Scene.FLOAT_BAR_W;
+    const BH = Level01Scene.FLOAT_BAR_H;
+    this.floatHpBg   = this.add.rectangle(0, 0, BW, BH, 0x111122).setDepth(20);
+    this.floatHpFill = this.add.rectangle(0, 0, BW, BH, 0x44cc66).setDepth(21).setOrigin(0, 0.5);
+    this.floatAmmoBar = this.add.graphics().setDepth(21);
 
     // Launch UIScene overlay
     this.scene.launch('UIScene');
@@ -207,5 +222,42 @@ export class Level01Scene extends Phaser.Scene {
 
     this.prevMouseDown = isDown;
     this.slowMo.update(pointer);
+
+    this.updateFloatingHUD();
+  }
+
+  private updateFloatingHUD(): void {
+    const BW  = Level01Scene.FLOAT_BAR_W;
+    const BH  = Level01Scene.FLOAT_BAR_H;
+    const OFF = Level01Scene.FLOAT_Y_OFFSET;
+    const px  = this.player.x;
+    const hpY = this.player.y - OFF;       // HP bar centre
+    const amY = this.player.y - OFF - 8;   // ammo bar, 8px above HP bar
+
+    // HP bar background
+    this.floatHpBg.setPosition(px, hpY);
+
+    // HP bar fill (left-anchored origin)
+    const pct = Phaser.Math.Clamp(this.player.getHealth() / BALANCE.PLAYER_MAX_HEALTH, 0, 1);
+    this.floatHpFill.setPosition(px - BW / 2, hpY);
+    this.floatHpFill.setDisplaySize(BW * pct, BH);
+    if (pct > 0.5)       this.floatHpFill.setFillStyle(0x44cc66);
+    else if (pct > 0.25) this.floatHpFill.setFillStyle(0xddcc22);
+    else                 this.floatHpFill.setFillStyle(0xcc3333);
+
+    // Ammo segmented bar — 10 cells, each 4×4 px with 1px gap
+    const SEG_W = 4;
+    const SEG_H = 4;
+    const GAP   = 1;
+    const MAX   = BALANCE.SHURIKEN_MAX_AMMO;
+    const totalW = MAX * SEG_W + (MAX - 1) * GAP;
+    const startX = px - totalW / 2;
+    const ammo   = this.player.getAmmo();
+    this.floatAmmoBar.clear();
+    for (let i = 0; i < MAX; i++) {
+      const filled = i < ammo;
+      this.floatAmmoBar.fillStyle(filled ? 0x88ccff : 0x222233, filled ? 1 : 0.7);
+      this.floatAmmoBar.fillRect(startX + i * (SEG_W + GAP), amY - SEG_H / 2, SEG_W, SEG_H);
+    }
   }
 }
