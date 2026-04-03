@@ -9,6 +9,8 @@ export enum PlayerState {
   DASH = 'DASH',
   HURT = 'HURT',
   DEAD = 'DEAD',
+  GRAPPLE_FLYING   = 'GRAPPLE_FLYING',
+  GRAPPLE_ATTACHED = 'GRAPPLE_ATTACHED',
 }
 
 // Input keys passed from scene into Player constructor.

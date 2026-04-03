@@ -18,7 +18,13 @@ export const BALANCE = {
   DASH_SPEED: 900,           // px/s during dash
   DASH_COOLDOWN: 600,        // ms cooldown after dash ends (resets on land)
 
-  // --- Slow-motion aim ---
+  // --- Grappling hook ---
+  GRAPPLE_RANGE: 600,        // px — max hook travel distance
+  GRAPPLE_HOOK_SPEED: 1200,  // px/s — hook projectile speed
+  GRAPPLE_PULL_FORCE: 800,   // px/s² — acceleration toward attachment point
+  GRAPPLE_DAMAGE: 10,        // damage dealt to enemy on hook contact
+
+  // --- Slow-motion aim (legacy, will be replaced by GrappleSystem) ---
   SLOWMO_TIMESCALE: 0.35,    // time scale while right-click held (1.0 = normal)
 
   // --- Fairness timings ---
