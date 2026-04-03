@@ -98,6 +98,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+  /**
+   * Called by GrappleSystem to enter/exit grapple-attached state.
+   * Disables gravity and input while attached; restores on release.
+   */
+  setGrappleAttached(attached: boolean): void {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    if (attached) {
+      body.setAllowGravity(false);
+      body.setVelocity(0, 0);
+      this.transitionTo(PlayerState.GRAPPLE_ATTACHED);
+    } else {
+      body.setAllowGravity(true);
+      body.setGravityY(BALANCE.GRAVITY);
+      this.transitionTo(PlayerState.JUMP); // carry momentum into jump arc
+    }
+  }
+
   getHealth(): number { return this.health; }
 
   /**
@@ -197,6 +214,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.hurtTimer <= 0) {
         this.transitionTo(PlayerState.IDLE);
       }
+      return;
+    }
+
+    if (this.isInState(PlayerState.GRAPPLE_ATTACHED)) {
+      // GrappleSystem handles all input while attached; just update visuals
+      this.updateFacing();
+      this.updateAnimation();
+      this.updateInvulnFlicker();
       return;
     }
 
