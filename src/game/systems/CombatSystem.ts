@@ -11,7 +11,7 @@ export class CombatSystem {
   constructor(
     scene: Phaser.Scene,
     player: Player,
-    platformsGroup: Phaser.Types.Physics.Arcade.ArcadeColliderType,
+    platformsCollider: Phaser.Types.Physics.Arcade.ArcadeColliderType,
     enemiesGroup: Phaser.Physics.Arcade.Group,
   ) {
     this.scene = scene;
@@ -51,7 +51,7 @@ export class CombatSystem {
     // 3. Shurikens hit platforms (collider required for TilemapLayer — overlap is unreliable)
     scene.physics.add.collider(
       this.shurikenGroup,
-      platformsGroup,
+      platformsCollider,
       (shurikenObj) => {
         const shuriken = shurikenObj as Shuriken;
         if (shuriken.active) shuriken.destroy();

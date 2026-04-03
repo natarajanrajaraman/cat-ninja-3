@@ -14,7 +14,7 @@ export class Level01Scene extends Phaser.Scene {
   private combatSystem!: CombatSystem;
   private slowMo!: SlowMoSystem;
   private spawnX = 96;
-  private spawnY = 790; // body.bottom = y+40 at scale=2; ground top=836; this spawns 6px above
+  private spawnY = 790; // tilemap ground surface = row 24 × 36px = 864; player falls into position on start
   private prevMouseDown = false;
   private lives = BALANCE.PLAYER_MAX_LIVES;
   private deathPending = false;
@@ -90,8 +90,8 @@ export class Level01Scene extends Phaser.Scene {
       );
     });
 
-    // Spawn dummy enemies — TEMP_GROUND_Y matches graybox layout; update after Tiled map is laid out
-    const TEMP_GROUND_Y = 836;
+    // Spawn dummy enemies — ground surface = row 24 × 36px = 864; update positions after level is laid out
+    const TEMP_GROUND_Y = 864;
     this.enemiesGroup = this.physics.add.group();
     this.spawnEnemies(TEMP_GROUND_Y);
 
