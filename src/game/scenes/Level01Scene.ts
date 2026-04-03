@@ -20,6 +20,8 @@ export class Level01Scene extends Phaser.Scene {
   private lives = BALANCE.PLAYER_MAX_LIVES;
   private deathPending = false;
   private activeCheckpoint: Checkpoint | null = null;
+  // @ts-ignore TS6133 — stored to maintain class references across scene restarts
+  private checkpoints: Checkpoint[] = [];
 
   // Floating HUD (world-space, follows player)
   private floatHpBg!: Phaser.GameObjects.Rectangle;
@@ -75,6 +77,7 @@ export class Level01Scene extends Phaser.Scene {
     const RESPAWN_Y = this.spawnY; // 790 — same ground-level spawn used at level start
     const cp1 = new Checkpoint(this, 1650, 804, RESPAWN_Y);
     const cp2 = new Checkpoint(this, 2130, 804, RESPAWN_Y);
+    this.checkpoints = [cp1, cp2];
 
     [cp1, cp2].forEach(cp => {
       this.physics.add.overlap(
@@ -227,6 +230,8 @@ export class Level01Scene extends Phaser.Scene {
       const rx = this.activeCheckpoint?.x ?? this.spawnX;
       const ry = this.activeCheckpoint?.getRespawnY() ?? this.spawnY;
       this.player.respawn(rx, ry);
+      // respawn() already emits player-health-changed internally; ammo-changed is not emitted
+      // there, so we emit it here to keep the HUD in sync.
       this.game.events.emit('ammo-changed', this.player.getAmmo());
       this.deathPending = false;
     });
