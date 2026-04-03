@@ -20,10 +20,10 @@ export class PreloadScene extends Phaser.Scene {
       frameHeight: 64,
     });
 
-    // Shuriken sprite sheet — inspect image if anim looks wrong (try 64x64 first)
-    this.load.spritesheet('shuriken', 'assets/Sprites/Sprites Shuriken.png', {
-      frameWidth: 64,
-      frameHeight: 64,
+    // Shuriken sprite sheet — 1950×1300, 6 cols × 4 rows, 325×325 per frame
+    this.load.spritesheet('shuriken', 'assets/Sprites/Sprites Shurikens.png', {
+      frameWidth: 325,
+      frameHeight: 325,
     });
 
     // Shuriken launch SFX
@@ -131,13 +131,11 @@ export class PreloadScene extends Phaser.Scene {
       repeat: 0,
     });
 
-    // --- Shuriken spin (all frames, fast loop) ---
-    // Sheet is 2816×1536 at 64×64 = 44 cols × 24 rows = 1056 frames.
-    // We use frames 0–15 (first row) for a 16-frame spin; adjust if it looks wrong.
+    // --- Shuriken spin — top-right 3 frames (indices 3, 4, 5) from 6-col sheet ---
     anims.create({
       key: 'shuriken_spin',
-      frames: anims.generateFrameNumbers('shuriken', { start: 0, end: 15 }),
-      frameRate: 16,
+      frames: anims.generateFrameNumbers('shuriken', { start: 3, end: 5 }),
+      frameRate: 12,
       repeat: -1,
     });
 

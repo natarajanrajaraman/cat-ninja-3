@@ -5,6 +5,7 @@ import { CombatSystem } from '../systems/CombatSystem';
 import { SlowMoSystem } from '../systems/SlowMoSystem';
 import { INPUT } from '../config/inputConfig';
 import { BALANCE } from '../config/balanceConfig';
+import { PlayerState } from '../types/PlayerTypes';
 
 export class Level01Scene extends Phaser.Scene {
   private player!: Player;
@@ -15,6 +16,8 @@ export class Level01Scene extends Phaser.Scene {
   private spawnX = 96;
   private spawnY = 804;
   private prevMouseDown = false;
+  private lives = BALANCE.PLAYER_MAX_LIVES;
+  private deathPending = false; // guard: only handle one death at a time
 
   constructor() {
     super({ key: 'Level01Scene' });
@@ -75,11 +78,10 @@ export class Level01Scene extends Phaser.Scene {
     this.addLabel(1760, GROUND_Y - 400, 'WALL\nJUMP\nSHAFT');
     this.addLabel(2500, 700, 'DOUBLE\nJUMP\nPLATFORMS');
 
-    // Respawn if player falls below world
+    // Instant-kill if player falls below world
     this.events.on('update', () => {
-      if (this.player.y > WORLD_H + 100) {
-        this.player.respawn(this.spawnX, this.spawnY);
-        this.game.events.emit('ammo-changed', this.player.getAmmo());
+      if (this.player.y > WORLD_H + 100 && !this.player.isInState(PlayerState.DEAD)) {
+        this.player.takeDamage(BALANCE.PLAYER_MAX_HEALTH);
       }
     });
 
@@ -88,16 +90,28 @@ export class Level01Scene extends Phaser.Scene {
 
     // Wire slow-mo system
     this.slowMo = new SlowMoSystem(this);
+
+    // Listen for player death
+    this.game.events.on('player-died', this.handlePlayerDeath, this);
+
     this.events.once('shutdown', () => {
       this.slowMo.destroy();
       this.scene.stop('UIScene');
+      this.game.events.off('player-died', this.handlePlayerDeath, this);
     });
 
     // Level music
     this.sound.play('music_level1', { loop: true, volume: 0.5 });
 
-    // Emit initial ammo to UIScene
-    this.game.events.emit('ammo-changed', BALANCE.SHURIKEN_MAX_AMMO);
+    // Emit initial HUD state — deferred one tick so UIScene.create() has run first
+    this.time.delayedCall(0, () => {
+      this.game.events.emit('ammo-changed', BALANCE.SHURIKEN_MAX_AMMO);
+      this.game.events.emit('player-health-changed', {
+        health: BALANCE.PLAYER_MAX_HEALTH,
+        maxHealth: BALANCE.PLAYER_MAX_HEALTH,
+      });
+      this.game.events.emit('player-lives-changed', this.lives);
+    });
   }
 
   private spawnEnemies(groundY: number): void {
@@ -138,6 +152,30 @@ export class Level01Scene extends Phaser.Scene {
     add(2920, groundY - 384, 180, 24, 0x557755);
     add(3100, G, 400, h, 0x555566);
     add(worldW / 2, -16, worldW, 32, 0x333344);
+  }
+
+  private handlePlayerDeath(): void {
+    if (this.deathPending) return;
+    this.deathPending = true;
+
+    this.lives -= 1;
+
+    if (this.lives <= 0) {
+      // No lives left — go to game over after the death animation plays
+      this.time.delayedCall(1200, () => {
+        this.scene.start('GameOverScene');
+      });
+      return;
+    }
+
+    this.game.events.emit('player-lives-changed', this.lives);
+
+    // Wait for death animation, then respawn
+    this.time.delayedCall(900, () => {
+      this.player.respawn(this.spawnX, this.spawnY);
+      this.game.events.emit('ammo-changed', this.player.getAmmo());
+      this.deathPending = false;
+    });
   }
 
   private addLabel(x: number, y: number, text: string): void {

@@ -64,7 +64,9 @@ export class SlowMoSystem {
   private enter(): void {
     this.active = true;
     this.hasShot = false;
-    this.scene.physics.world.timeScale = BALANCE.SLOWMO_TIMESCALE;
+    // Phaser's arcade physics timeScale is inverse: higher value = fewer steps per frame = slower sim.
+    // Divide by SLOWMO_TIMESCALE so physics moves at SLOWMO_TIMESCALE fraction of normal speed.
+    this.scene.physics.world.timeScale = 1 / BALANCE.SLOWMO_TIMESCALE;
     this.scene.time.timeScale = BALANCE.SLOWMO_TIMESCALE;
     this.scene.anims.globalTimeScale = BALANCE.SLOWMO_TIMESCALE;
     this.scene.game.events.emit('slowmo-enter');

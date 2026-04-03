@@ -30,6 +30,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private ammo: number = 0; // initialized to SHURIKEN_MAX_AMMO in constructor
   private shurikenCooldownTimer: number = 0;
 
+  // --- Health / hurt ---
+  private health: number = 0; // initialized to PLAYER_MAX_HEALTH in constructor
+  private invulnTimer: number = 0;  // iframes countdown (ms)
+  private hurtTimer: number = 0;    // input-locked stagger countdown (ms)
+
   constructor(scene: Phaser.Scene, x: number, y: number, keys: PlayerKeys) {
     super(scene, x, y, 'catninja');
     this.keys = keys;
@@ -59,6 +64,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     (this.clawHitbox.body as Phaser.Physics.Arcade.Body).enable = false;
 
     this.ammo = BALANCE.SHURIKEN_MAX_AMMO;
+    this.health = BALANCE.PLAYER_MAX_HEALTH;
   }
 
   // -------------------------------------------------------
@@ -78,8 +84,47 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.clawCooldownTimer = 0;
     this.shurikenCooldownTimer = 0;
     this.ammo = BALANCE.SHURIKEN_MAX_AMMO;
+    this.health = BALANCE.PLAYER_MAX_HEALTH;
+    this.invulnTimer = BALANCE.PLAYER_INVULN_MS; // brief iframes on respawn
+    this.hurtTimer = 0;
+    this.setAlpha(1);
     (this.clawHitbox.body as Phaser.Physics.Arcade.Body).enable = false;
     this.transitionTo(PlayerState.IDLE);
+    this.scene.game.events.emit('player-health-changed', {
+      health: this.health,
+      maxHealth: BALANCE.PLAYER_MAX_HEALTH,
+    });
+  }
+
+  getHealth(): number { return this.health; }
+
+  /**
+   * Apply damage to the player. Ignored during iframes or when already dead.
+   * Emits 'player-died' when health reaches 0.
+   */
+  takeDamage(amount: number): void {
+    if (this.invulnTimer > 0) return;
+    if (this.isInState(PlayerState.DEAD)) return;
+
+    this.health = Math.max(0, this.health - amount);
+    this.scene.game.events.emit('player-health-changed', {
+      health: this.health,
+      maxHealth: BALANCE.PLAYER_MAX_HEALTH,
+    });
+
+    if (this.health <= 0) {
+      this.transitionTo(PlayerState.DEAD);
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      body.setVelocityX(0);
+      body.setVelocityY(0);
+      body.setAccelerationX(0);
+      this.setAlpha(1);
+      this.scene.game.events.emit('player-died');
+    } else {
+      this.invulnTimer = BALANCE.PLAYER_INVULN_MS;
+      this.hurtTimer = BALANCE.PLAYER_HURT_DURATION_MS;
+      this.transitionTo(PlayerState.HURT);
+    }
   }
 
   // -------------------------------------------------------
@@ -134,6 +179,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   update(delta: number): void {
     this.updateTimers(delta);
 
+    // Dead: freeze and wait for scene to respawn
+    if (this.isInState(PlayerState.DEAD)) {
+      this.updateAnimation();
+      return;
+    }
+
+    // Hurt: physics applies (knockback carries through) but no new input
+    if (this.isInState(PlayerState.HURT)) {
+      this.updatePhysicsState();
+      this.updateFacing();
+      this.updateClawHitbox();
+      this.updateAnimation();
+      this.updateInvulnFlicker();
+      if (this.hurtTimer <= 0) {
+        this.transitionTo(PlayerState.IDLE);
+      }
+      return;
+    }
+
     if (this.isInState(PlayerState.DASH)) {
       this.updateDash();
     } else {
@@ -147,6 +211,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.updateFacing();
     this.updateClawHitbox();
     this.updateAnimation();
+    this.updateInvulnFlicker();
+  }
+
+  // Blink the sprite during iframes so the player can tell they're invulnerable
+  private updateInvulnFlicker(): void {
+    if (this.invulnTimer > 0) {
+      // Toggle every 100 ms: 0.25 alpha when in the "dark" phase
+      const phase = Math.floor(this.invulnTimer / 100) % 2;
+      this.setAlpha(phase === 0 ? 0.25 : 1.0);
+    } else {
+      this.setAlpha(1.0);
+    }
   }
 
   // Tick down all timers each frame
@@ -157,6 +233,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.attackTimer = Math.max(0, this.attackTimer - delta);
     this.clawCooldownTimer = Math.max(0, this.clawCooldownTimer - delta);
     this.shurikenCooldownTimer = Math.max(0, this.shurikenCooldownTimer - delta);
+    this.invulnTimer = Math.max(0, this.invulnTimer - delta);
+    this.hurtTimer = Math.max(0, this.hurtTimer - delta);
     // dashCooldownTimer does NOT count down in the air — dash refreshes only on landing
   }
 
@@ -229,7 +307,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const vx = this.facing === 'right' ? BALANCE.DASH_SPEED : -BALANCE.DASH_SPEED;
     body.setVelocityX(vx);
     body.setVelocityY(0);
-    body.setGravityY(-BALANCE.GRAVITY); // neutralise gravity during dash
+    body.setGravityY(0); // zero body gravity during dash (world gravity is also 0, net = 0)
     body.setAccelerationX(0);
     this.transitionTo(PlayerState.DASH);
   }
@@ -441,6 +519,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       case PlayerState.DASH:
         this.play('dash', true);
+        break;
+      case PlayerState.HURT:
+        this.play('jump_fall', true); // reuse fall frames as hurt stagger
         break;
       case PlayerState.DEAD:
         this.play('dead', true);

@@ -41,6 +41,12 @@ export const BALANCE = {
   SHURIKEN_MAX_AMMO: 10,
   SHURIKEN_LIFETIME: 2500,   // ms before auto-destroy if no hit
 
+  // --- Player health / lives ---
+  PLAYER_MAX_HEALTH: 100,
+  PLAYER_MAX_LIVES: 9,
+  PLAYER_INVULN_MS: 1200,       // iframes (blinking) after taking damage
+  PLAYER_HURT_DURATION_MS: 350, // input locked during hurt stagger
+
   // --- Dummy enemy ---
   DUMMY_HEALTH: 50,
 } as const;

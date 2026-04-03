@@ -10,9 +10,13 @@ export class Shuriken extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
+    // Frames are 325×325 — scale down to a sensible in-game size
+    this.setDisplaySize(32, 32);
+
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(true);
     body.setGravityY(BALANCE.SHURIKEN_GRAVITY);
+    body.setSize(20, 20); // hitbox smaller than display to feel fair
 
     this.play('shuriken_spin');
 
