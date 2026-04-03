@@ -11,7 +11,7 @@ export class CombatSystem {
   constructor(
     scene: Phaser.Scene,
     player: Player,
-    platformsGroup: Phaser.Physics.Arcade.StaticGroup,
+    platformsGroup: Phaser.Types.Physics.Arcade.ArcadeColliderType,
     enemiesGroup: Phaser.Physics.Arcade.Group,
   ) {
     this.scene = scene;
