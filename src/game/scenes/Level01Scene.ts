@@ -6,6 +6,7 @@ import { SlowMoSystem } from '../systems/SlowMoSystem';
 import { INPUT } from '../config/inputConfig';
 import { BALANCE } from '../config/balanceConfig';
 import { PlayerState } from '../types/PlayerTypes';
+import { Checkpoint } from '../entities/Checkpoint';
 
 export class Level01Scene extends Phaser.Scene {
   private player!: Player;
@@ -18,6 +19,7 @@ export class Level01Scene extends Phaser.Scene {
   private prevMouseDown = false;
   private lives = BALANCE.PLAYER_MAX_LIVES;
   private deathPending = false;
+  private activeCheckpoint: Checkpoint | null = null;
 
   // Floating HUD (world-space, follows player)
   private floatHpBg!: Phaser.GameObjects.Rectangle;
@@ -67,6 +69,20 @@ export class Level01Scene extends Phaser.Scene {
 
     // Collide player with platforms
     this.physics.add.collider(this.player, this.platforms);
+
+    // Checkpoints — CP1 after dash gap, CP2 after wall-jump shaft
+    // Ground surface Y = 836; checkpoint centre Y = 836 - 32 = 804 (64 px tall, bottom on ground)
+    const RESPAWN_Y = this.spawnY; // 790 — same ground-level spawn used at level start
+    const cp1 = new Checkpoint(this, 1650, 804, RESPAWN_Y);
+    const cp2 = new Checkpoint(this, 2130, 804, RESPAWN_Y);
+
+    [cp1, cp2].forEach(cp => {
+      this.physics.add.overlap(
+        this.player,
+        cp,
+        () => this.onCheckpointOverlap(cp),
+      );
+    });
 
     // Spawn dummy enemies
     this.enemiesGroup = this.physics.add.group();
@@ -141,6 +157,27 @@ export class Level01Scene extends Phaser.Scene {
     enemies.forEach(e => this.enemiesGroup.add(e));
   }
 
+  private onCheckpointOverlap(cp: Checkpoint): void {
+    if (cp.isActivated()) return;
+    cp.activate();
+    this.activeCheckpoint = cp;
+    this.showCheckpointPopup(cp.x, cp.y);
+  }
+
+  private showCheckpointPopup(x: number, y: number): void {
+    const text = this.add.text(x, y - 48, 'CHECKPOINT', {
+      fontSize: '16px',
+      color: '#ffcc44',
+    }).setOrigin(0.5).setDepth(25);
+
+    this.tweens.add({
+      targets: text,
+      alpha: 0,
+      duration: 1500,
+      onComplete: () => text.destroy(),
+    });
+  }
+
   private buildGrayboxRoom(groundY: number, worldW: number): void {
     const h = 64;
     const G = groundY + h / 2;
@@ -187,7 +224,9 @@ export class Level01Scene extends Phaser.Scene {
 
     // Wait for death animation, then respawn
     this.time.delayedCall(900, () => {
-      this.player.respawn(this.spawnX, this.spawnY);
+      const rx = this.activeCheckpoint?.x ?? this.spawnX;
+      const ry = this.activeCheckpoint?.getRespawnY() ?? this.spawnY;
+      this.player.respawn(rx, ry);
       this.game.events.emit('ammo-changed', this.player.getAmmo());
       this.deathPending = false;
     });
