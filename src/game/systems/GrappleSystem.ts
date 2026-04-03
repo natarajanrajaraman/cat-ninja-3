@@ -4,7 +4,6 @@ import { Player } from '../entities/Player';
 import { GrappleHook } from '../entities/GrappleHook';
 import { IDamageable } from '../types/CombatTypes';
 import { BALANCE } from '../config/balanceConfig';
-import { PlayerState } from '../types/PlayerTypes';
 
 type GrappleState = 'IDLE' | 'FLYING' | 'ATTACHED_TILE' | 'ATTACHED_ENEMY';
 
@@ -33,6 +32,10 @@ export class GrappleSystem {
 
   private prevRightDown = false;
 
+  private tileCollider: Phaser.Physics.Arcade.Collider | null = null;
+  private enemyOverlap: Phaser.Physics.Arcade.Collider | null = null;
+  private readonly spaceKey: Phaser.Input.Keyboard.Key;
+
   constructor(
     scene: Phaser.Scene,
     player: Player,
@@ -45,6 +48,7 @@ export class GrappleSystem {
     this.enemiesGroup = enemiesGroup;
 
     this.ropeGraphics = scene.add.graphics().setDepth(15);
+    this.spaceKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
   }
 
   update(pointer: Phaser.Input.Pointer): void {
@@ -61,9 +65,7 @@ export class GrappleSystem {
         this.updateFlying();
         if (rightJustPressed) this.release(); // re-fire: release and immediately fire new hook
         // Jump while flying: just release (player falls normally)
-        if (Phaser.Input.Keyboard.JustDown(
-          this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE)
-        )) {
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
           this.release();
         }
         break;
@@ -77,9 +79,7 @@ export class GrappleSystem {
           return;
         }
         // Jump to release
-        if (Phaser.Input.Keyboard.JustDown(
-          this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE)
-        )) {
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
           this.release();
         }
         break;
@@ -96,13 +96,17 @@ export class GrappleSystem {
     this.locked = false;
     this.attachedEnemy = null;
 
+    // Remove stale colliders from previous shot
+    if (this.tileCollider) { this.scene.physics.world.removeCollider(this.tileCollider); this.tileCollider = null; }
+    if (this.enemyOverlap) { this.scene.physics.world.removeCollider(this.enemyOverlap); this.enemyOverlap = null; }
+
     // Wire collisions for this hook instance
-    this.scene.physics.add.collider(
+    this.tileCollider = this.scene.physics.add.collider(
       this.hook,
       this.groundLayer,
       () => this.onHitTile(),
     );
-    this.scene.physics.add.overlap(
+    this.enemyOverlap = this.scene.physics.add.overlap(
       this.hook,
       this.enemiesGroup,
       (_hook, enemyObj) => this.onHitEnemy(enemyObj as Phaser.GameObjects.GameObject & IDamageable),
@@ -188,16 +192,14 @@ export class GrappleSystem {
   }
 
   private release(): void {
-    const body = this.player.body as Phaser.Physics.Arcade.Body;
+    if (this.tileCollider) { this.scene.physics.world.removeCollider(this.tileCollider); this.tileCollider = null; }
+    if (this.enemyOverlap) { this.scene.physics.world.removeCollider(this.enemyOverlap); this.enemyOverlap = null; }
     this.player.setGrappleAttached(false);
     this.hook?.destroy();
     this.hook = null;
     this.attachedEnemy = null;
     this.locked = false;
     this.state = 'IDLE';
-    // Gravity is restored inside setGrappleAttached(false)
-    // Carry current velocity as launch momentum
-    void body; // velocity already applied
   }
 
   private drawRope(): void {
@@ -215,6 +217,8 @@ export class GrappleSystem {
     if (this.state !== 'IDLE') {
       this.release();
     }
+    if (this.tileCollider) { this.scene.physics.world.removeCollider(this.tileCollider); }
+    if (this.enemyOverlap) { this.scene.physics.world.removeCollider(this.enemyOverlap); }
     this.ropeGraphics.destroy();
     this.hook?.destroy();
   }
