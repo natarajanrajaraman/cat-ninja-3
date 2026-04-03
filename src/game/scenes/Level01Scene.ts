@@ -75,14 +75,14 @@ export class Level01Scene extends Phaser.Scene {
     // Checkpoints — CP1 after dash gap, CP2 after wall-jump shaft
     // Ground surface Y = 836; checkpoint centre Y = 836 - 32 = 804 (64 px tall, bottom on ground)
     const RESPAWN_Y = this.spawnY; // 790 — same ground-level spawn used at level start
-    const cp1 = new Checkpoint(this, 1650, 804, RESPAWN_Y);
-    const cp2 = new Checkpoint(this, 2130, 804, RESPAWN_Y);
+    const cp1 = new Checkpoint(this, 1650, 804, RESPAWN_Y, 'CP1');
+    const cp2 = new Checkpoint(this, 2130, 804, RESPAWN_Y, 'CP2');
     this.checkpoints = [cp1, cp2];
 
     [cp1, cp2].forEach(cp => {
       this.physics.add.overlap(
         this.player,
-        cp,
+        cp.getRect(), // overlap needs the Rectangle, not the wrapper class
         () => this.onCheckpointOverlap(cp),
       );
     });
@@ -265,6 +265,7 @@ export class Level01Scene extends Phaser.Scene {
     }
 
     this.prevMouseDown = isDown;
+    this.game.registry.set('playerPos', { x: Math.round(this.player.x), y: Math.round(this.player.y) });
     this.slowMo.update(pointer);
 
     this.updateFloatingHUD();

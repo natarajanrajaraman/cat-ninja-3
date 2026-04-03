@@ -10,6 +10,7 @@ export class UIScene extends Phaser.Scene {
 
   // --- Lives (screen-fixed) ---
   private livesText!: Phaser.GameObjects.Text;
+  private posText!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'UIScene', active: false });
@@ -23,6 +24,12 @@ export class UIScene extends Phaser.Scene {
       fontSize: '14px',
       color: '#ffcc44',
     });
+
+    // Player position — top-right (playtest helper)
+    this.posText = this.add.text(width - 16, 16, 'x: 0  y: 0', {
+      fontSize: '12px',
+      color: '#aabbcc',
+    }).setOrigin(1, 0);
 
     // Full-screen desaturate overlay — hidden until slow-mo activates
     this.desaturateOverlay = this.add.rectangle(
@@ -52,6 +59,9 @@ export class UIScene extends Phaser.Scene {
   }
 
   update(): void {
+    const pos = this.game.registry.get('playerPos') as { x: number; y: number } | undefined;
+    if (pos) this.posText.setText(`x: ${pos.x}  y: ${pos.y}`);
+
     if (!this.slowMoActive) return;
 
     const pointer = this.input.activePointer;

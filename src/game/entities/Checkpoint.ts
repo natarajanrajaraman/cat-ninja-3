@@ -2,41 +2,46 @@
 import Phaser from 'phaser';
 
 /**
- * Physical checkpoint object. Touch to activate; once active it becomes the
- * player's respawn location. Visual: 16×64 px rectangle, grey → gold on activate.
+ * Physical checkpoint marker. Walk into it to activate — becomes the player's
+ * respawn location. Uses a plain Rectangle + static body so setFillStyle works
+ * reliably (setTint on Phaser.Physics.Arcade.Image is unreliable for 1px textures).
  */
-export class Checkpoint extends Phaser.Physics.Arcade.Image {
+export class Checkpoint {
   private _activated = false;
   private readonly _respawnY: number;
+  readonly x: number;
+  readonly y: number;
+  private readonly rect: Phaser.GameObjects.Rectangle;
+  private readonly nameLabel: Phaser.GameObjects.Text;
 
-  /**
-   * @param x       World-space centre X
-   * @param y       World-space centre Y
-   * @param respawnY  Sprite Y to pass to player.respawn() — ground-level spawn Y (790).
-   */
-  constructor(scene: Phaser.Scene, x: number, y: number, respawnY: number) {
-    super(scene, x, y, 'pixel');
+  constructor(scene: Phaser.Scene, x: number, y: number, respawnY: number, name: string) {
+    this.x = x;
+    this.y = y;
     this._respawnY = respawnY;
 
-    scene.add.existing(this);
-    scene.physics.add.existing(this, true); // true = static body
+    // Visible column — muted blue-grey when inactive
+    this.rect = scene.add.rectangle(x, y, 16, 64, 0x6677aa).setDepth(5);
+    scene.physics.add.existing(this.rect, true); // static body
 
-    this.setDisplaySize(16, 64);
-    this.setTint(0x555566); // inactive: grey
-
-    // Fit static body to display size
-    (this.body as Phaser.Physics.Arcade.StaticBody).setSize(16, 64);
+    // Label above the column
+    this.nameLabel = scene.add.text(x, y - 40, name, {
+      fontSize: '11px',
+      color: '#8899bb',
+    }).setOrigin(0.5).setDepth(5);
   }
+
+  /** The rectangle game object — pass this to physics.add.overlap(). */
+  getRect(): Phaser.GameObjects.Rectangle { return this.rect; }
 
   /** Activate this checkpoint. No-ops if already active. */
   activate(): void {
     if (this._activated) return;
     this._activated = true;
-    this.setTint(0xffcc44); // active: gold
+    this.rect.setFillStyle(0xffcc44);     // gold
+    this.nameLabel.setColor('#ffcc44');
 
-    // Play SFX only if the key is loaded (graceful no-op in graybox)
-    if (this.scene.cache.audio.has('checkpoint')) {
-      this.scene.sound.play('checkpoint', { volume: 0.7 });
+    if (this.rect.scene.cache.audio.has('checkpoint')) {
+      this.rect.scene.sound.play('checkpoint', { volume: 0.7 });
     }
   }
 
