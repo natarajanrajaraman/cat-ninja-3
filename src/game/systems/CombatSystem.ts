@@ -48,8 +48,8 @@ export class CombatSystem {
       },
     );
 
-    // 3. Shurikens hit platforms
-    scene.physics.add.overlap(
+    // 3. Shurikens hit platforms (collider required for TilemapLayer — overlap is unreliable)
+    scene.physics.add.collider(
       this.shurikenGroup,
       platformsGroup,
       (shurikenObj) => {
