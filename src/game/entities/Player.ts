@@ -206,7 +206,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.handleJumpInput();
       this.handleDashInput();
       this.handleAttackInput();
-      this.handleHorizontalMovement();
+      this.handleHorizontalMovement(delta);
       this.updatePhysicsState();
     }
 
@@ -346,7 +346,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.shurikenCooldownTimer = BALANCE.SHURIKEN_FIRE_COOLDOWN;
     return true;
   }
-  private handleHorizontalMovement(): void {
+  private handleHorizontalMovement(delta: number): void {
     if (this.isInState(PlayerState.WALL_SLIDE)) return; // don't fight the wall while sliding
     const body = this.body as Phaser.Physics.Arcade.Body;
     const onGround = this.isGrounded();
