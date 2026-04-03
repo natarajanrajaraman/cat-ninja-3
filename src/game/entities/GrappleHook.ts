@@ -31,16 +31,12 @@ export class GrappleHook extends Phaser.Physics.Arcade.Image {
     const dx = toX - this.spawnX;
     const dy = toY - this.spawnY;
     const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return; // degenerate click — no-op
 
-    // Clamp target to range
-    const scale = dist > BALANCE.GRAPPLE_RANGE ? BALANCE.GRAPPLE_RANGE / dist : 1;
     const vx = (dx / dist) * BALANCE.GRAPPLE_HOOK_SPEED;
     const vy = (dy / dist) * BALANCE.GRAPPLE_HOOK_SPEED;
 
     (this.body as Phaser.Physics.Arcade.Body).setVelocity(vx, vy);
-
-    // Store clamped target for range check (max travel = GRAPPLE_RANGE)
-    void scale; // scale available if needed for future use
   }
 
   /** Returns true if hook has exceeded GRAPPLE_RANGE from spawn. */
