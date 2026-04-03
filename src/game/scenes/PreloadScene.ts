@@ -23,6 +23,15 @@ export class PreloadScene extends Phaser.Scene {
     // Shuriken — cropped single frame (48×48) from top-right of Sprites Shurikens.png
     this.load.image('shuriken', 'assets/Sprites/Shuriken.png');
 
+    // Tilemap — Tiled JSON export
+    this.load.tilemapTiledJSON('level01', 'assets/tiles/level01.json');
+
+    // Kenney Pixel Platformer Industrial Expansion — 18×18 tiles, no spacing
+    this.load.spritesheet('tiles',
+      'assets/tiles/kenney_pixel-platformer-industrial-expansion/Tilemap/tilemap_packed.png',
+      { frameWidth: 18, frameHeight: 18 },
+    );
+
     // Shuriken launch SFX
     this.load.audio('shuriken_1', 'assets/SoundEffects/shuriken launch/sword.1.ogg');
     this.load.audio('shuriken_2', 'assets/SoundEffects/shuriken launch/sword.2.ogg');
