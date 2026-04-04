@@ -6,7 +6,6 @@ export enum PlayerState {
   DOUBLE_JUMP = 'DOUBLE_JUMP',
   WALL_SLIDE = 'WALL_SLIDE',
   WALL_JUMP = 'WALL_JUMP',
-  DASH = 'DASH',
   HURT = 'HURT',
   DEAD = 'DEAD',
   GRAPPLE_FLYING   = 'GRAPPLE_FLYING',
@@ -19,6 +18,6 @@ export interface PlayerKeys {
   left: Phaser.Input.Keyboard.Key;
   right: Phaser.Input.Keyboard.Key;
   jump: Phaser.Input.Keyboard.Key;
-  dash: Phaser.Input.Keyboard.Key;
+  shift: Phaser.Input.Keyboard.Key; // secondary attack (Left Shift)
   attack: Phaser.Input.Keyboard.Key;
 }

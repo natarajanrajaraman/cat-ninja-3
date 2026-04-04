@@ -12,8 +12,8 @@ export class Shuriken extends Phaser.Physics.Arcade.Sprite {
 
     // Image is 48×48 — render at 16×16 in-game (small, fast-moving projectile)
     this.setDisplaySize(16, 16);
-    // Bright gold tint for high contrast against dark backgrounds
-    this.setTint(0xffe055);
+    // Pure white tint — maximum brightness on dark backgrounds
+    this.setTint(0xffffff);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     // Note: gravity is set via the PhysicsGroup config in CombatSystem (gravityY),

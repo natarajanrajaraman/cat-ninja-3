@@ -83,18 +83,12 @@ export class GrappleSystem {
   }
 
   private fire(worldX: number, worldY: number): void {
-    // Spawn hook offset in front of player to avoid immediate self-collision with nearby tiles
-    const dx = worldX - this.player.x;
-    const dy = worldY - this.player.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist === 0) return;
-
-    const offset = BALANCE.HOOK_SPAWN_OFFSET;
-    const spawnX = this.player.x + (dx / dist) * offset;
-    const spawnY = this.player.y + (dy / dist) * offset;
+    // Spawn at player centre — body is 2×2 so it can't clip adjacent tiles from a clear position.
+    // (A large spawn offset caused the hook to materialise inside nearby tiles.)
+    if (worldX === this.player.x && worldY === this.player.y) return;
 
     this.hook?.destroy();
-    this.hook = new GrappleHook(this.scene, spawnX, spawnY);
+    this.hook = new GrappleHook(this.scene, this.player.x, this.player.y);
     this.hook.launch(worldX, worldY);
     this.state = 'FLYING';
     this.locked = false;

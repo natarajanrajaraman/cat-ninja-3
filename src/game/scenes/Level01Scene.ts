@@ -59,13 +59,13 @@ export class Level01Scene extends Phaser.Scene {
       left: INPUT.MOVE_LEFT,
       right: INPUT.MOVE_RIGHT,
       jump: INPUT.JUMP,
-      dash: INPUT.DASH,
+      shift: INPUT.CLAW_ALT,
       attack: INPUT.CLAW,
     }) as {
       left: Phaser.Input.Keyboard.Key;
       right: Phaser.Input.Keyboard.Key;
       jump: Phaser.Input.Keyboard.Key;
-      dash: Phaser.Input.Keyboard.Key;
+      shift: Phaser.Input.Keyboard.Key;
       attack: Phaser.Input.Keyboard.Key;
     };
 

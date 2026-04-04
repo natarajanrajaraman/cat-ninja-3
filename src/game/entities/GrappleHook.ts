@@ -24,7 +24,7 @@ export class GrappleHook extends Phaser.Physics.Arcade.Image {
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setGravityY(BALANCE.GRAPPLE_HOOK_GRAVITY); // parabolic arc
-    body.setSize(6, 6);                             // small collision box
+    body.setSize(2, 2);                             // point-like — prevents clipping adjacent tiles
   }
 
   /** Aim and launch toward worldX/Y. */
