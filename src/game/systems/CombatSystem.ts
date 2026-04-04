@@ -24,13 +24,29 @@ export class CombatSystem {
       gravityY: BALANCE.SHURIKEN_GRAVITY,
     });
 
-    // 1. Claw hits enemies
+    // Debounce: prevent the same attack swing from playing a hit sound more than once
+    let lastMeleeHitSoundTime = -Infinity;
+
+    // 1. Claw hits enemies — play front/behind hit sound once per swing
     scene.physics.add.overlap(
       player.clawHitbox,
       enemiesGroup,
       (_hitbox, enemyObj) => {
         const enemy = enemyObj as unknown as IDamageable;
         enemy.takeDamage(BALANCE.CLAW_DAMAGE);
+
+        const now = scene.time.now;
+        if (now - lastMeleeHitSoundTime > BALANCE.CLAW_COOLDOWN_MS * 0.8) {
+          lastMeleeHitSoundTime = now;
+          const enemyGO = enemyObj as unknown as { x: number };
+          const facing = player.getFacing();
+          const inFront = (facing === 'right' && enemyGO.x >= player.x) ||
+                          (facing === 'left'  && enemyGO.x <= player.x);
+          const keys = inFront
+            ? ['melee_hitfront_1', 'melee_hitfront_2']
+            : ['melee_hitbehind_1', 'melee_hitbehind_2', 'melee_hitbehind_3'];
+          scene.sound.play(keys[Math.floor(Math.random() * keys.length)], { volume: 0.7 });
+        }
       },
     );
 
@@ -55,6 +71,21 @@ export class CombatSystem {
       (shurikenObj) => {
         const shuriken = shurikenObj as Shuriken;
         if (shuriken.active) shuriken.destroy();
+      },
+    );
+
+    // 4. Claw hits tiles — play tile-hit sound once per swing
+    let lastMeleeTileHitSoundTime = -Infinity;
+    scene.physics.add.collider(
+      player.clawHitbox,
+      platformsCollider,
+      () => {
+        if (!(player.clawHitbox.body as Phaser.Physics.Arcade.Body).enable) return;
+        const now = scene.time.now;
+        if (now - lastMeleeTileHitSoundTime > BALANCE.CLAW_COOLDOWN_MS * 0.8) {
+          lastMeleeTileHitSoundTime = now;
+          scene.sound.play('melee_hittile_1', { volume: 0.7 });
+        }
       },
     );
   }

@@ -56,8 +56,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Claw hitbox — invisible, disabled until attack fires
     this.clawHitbox = scene.physics.add.image(x, y, '__DEFAULT') as Phaser.Physics.Arcade.Image;
     this.clawHitbox.setVisible(false);
-    (this.clawHitbox.body as Phaser.Physics.Arcade.Body).setSize(BALANCE.CLAW_RANGE, 36);
-    (this.clawHitbox.body as Phaser.Physics.Arcade.Body).enable = false;
+    const clawBody = this.clawHitbox.body as Phaser.Physics.Arcade.Body;
+    clawBody.setSize(BALANCE.CLAW_RANGE, 36);
+    clawBody.enable = false;
+    clawBody.setImmovable(true);
+    clawBody.setAllowGravity(false);
 
     this.ammo = BALANCE.SHURIKEN_MAX_AMMO;
     this.health = BALANCE.PLAYER_MAX_HEALTH;
@@ -274,7 +277,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.clawCooldownTimer = BALANCE.CLAW_COOLDOWN_MS;
 
     (this.clawHitbox.body as Phaser.Physics.Arcade.Body).enable = true;
-    this.playRandomSound(['claw_1', 'claw_2', 'claw_3', 'claw_4', 'claw_5']);
+    this.playRandomSound(['melee_hitnothing_1']);
     this.play('claw', true);
   }
 
@@ -282,6 +285,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const key = soundKeys[Math.floor(Math.random() * soundKeys.length)];
     this.scene.sound.play(key, { volume: 0.7 });
   }
+
+  getFacing(): 'left' | 'right' { return this.facing; }
 
   getAmmo(): number { return this.ammo; }
 

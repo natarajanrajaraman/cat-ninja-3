@@ -29,12 +29,17 @@ export class GrappleSystem {
   private ropeLength = 0;
   private attachedEnemy: (Phaser.GameObjects.GameObject & IDamageable) | null = null;
   private locked = false; // true once player reaches a tile surface
+  private isFloorAttachment = false; // floor attachments release on arrival instead of locking
 
   private prevRightDown = false;
 
-  private tileCollider: Phaser.Physics.Arcade.Collider | null = null;
+  // Swept tile detection — no Phaser tile collider; we step manually each frame
+  private hookPrevX = 0;
+  private hookPrevY = 0;
+
   private enemyOverlap: Phaser.Physics.Arcade.Collider | null = null;
   private readonly spaceKey: Phaser.Input.Keyboard.Key;
+  private readonly grappleSounds = ['grapple_launch_1', 'grapple_launch_2'];
 
   constructor(
     scene: Phaser.Scene,
@@ -83,8 +88,6 @@ export class GrappleSystem {
   }
 
   private fire(worldX: number, worldY: number): void {
-    // Spawn at player centre — body is 2×2 so it can't clip adjacent tiles from a clear position.
-    // (A large spawn offset caused the hook to materialise inside nearby tiles.)
     if (worldX === this.player.x && worldY === this.player.y) return;
 
     this.hook?.destroy();
@@ -93,22 +96,25 @@ export class GrappleSystem {
     this.state = 'FLYING';
     this.locked = false;
     this.attachedEnemy = null;
+    this.isFloorAttachment = false;
 
-    // Remove stale colliders from previous shot
-    if (this.tileCollider) { this.scene.physics.world.removeCollider(this.tileCollider); this.tileCollider = null; }
+    // Track previous position for swept tile detection
+    this.hookPrevX = this.player.x;
+    this.hookPrevY = this.player.y;
+
+    // Remove stale overlap from previous shot
     if (this.enemyOverlap) { this.scene.physics.world.removeCollider(this.enemyOverlap); this.enemyOverlap = null; }
 
-    // Wire collisions for this hook instance
-    this.tileCollider = this.scene.physics.add.collider(
-      this.hook,
-      this.groundLayer,
-      () => this.onHitTile(),
-    );
+    // Enemy overlap only — tile detection is handled manually in updateFlying()
     this.enemyOverlap = this.scene.physics.add.overlap(
       this.hook,
       this.enemiesGroup,
       (_hook, enemyObj) => this.onHitEnemy(enemyObj as Phaser.GameObjects.GameObject & IDamageable),
     );
+
+    // Play launch sound
+    const key = this.grappleSounds[Math.floor(Math.random() * this.grappleSounds.length)];
+    this.scene.sound.play(key, { volume: 0.6 });
   }
 
   private onHitTile(): void {
@@ -118,6 +124,8 @@ export class GrappleSystem {
     this.ropeLength = Phaser.Math.Distance.Between(
       this.player.x, this.player.y, this.attachX, this.attachY,
     );
+    // Floor attachment: tile is below player — release on arrival rather than locking
+    this.isFloorAttachment = this.attachY > this.player.y + 20;
     this.hook.setActive(false).setVisible(false);
     (this.hook.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
     this.state = 'ATTACHED_TILE';
@@ -146,6 +154,36 @@ export class GrappleSystem {
       this.release();
       return;
     }
+
+    // Swept tile detection: step along the path from previous to current hook position.
+    // This catches tunnelling through tiles that Phaser's discrete collider would miss.
+    const curX = this.hook.x;
+    const curY = this.hook.y;
+    const dx = curX - this.hookPrevX;
+    const dy = curY - this.hookPrevY;
+    const moveDist = Math.sqrt(dx * dx + dy * dy);
+    if (moveDist > 0) {
+      const steps = Math.max(1, Math.ceil(moveDist / 8));
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const sx = this.hookPrevX + dx * t;
+        const sy = this.hookPrevY + dy * t;
+        const tile = this.groundLayer.getTileAtWorldXY(sx, sy);
+        if (tile && tile.index !== -1) {
+          // Snap hook to the sample point just before entering the tile
+          const prevT = (i - 1) / steps;
+          this.hook.setPosition(
+            this.hookPrevX + dx * prevT,
+            this.hookPrevY + dy * prevT,
+          );
+          this.onHitTile();
+          return;
+        }
+      }
+    }
+    this.hookPrevX = curX;
+    this.hookPrevY = curY;
+
     this.hook.updateAngle(); // rotate to match parabolic velocity
   }
 
@@ -169,10 +207,10 @@ export class GrappleSystem {
     const dy = this.attachY - this.player.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    // On reach: tile → lock; enemy → break
+    // On reach: enemy → break; floor → release (land naturally); ceiling/wall → lock
     if (dist < 8) {
-      if (this.state === 'ATTACHED_ENEMY') {
-        this.release(); // enemy grapple pops on contact — don't oscillate
+      if (this.state === 'ATTACHED_ENEMY' || this.isFloorAttachment) {
+        this.release();
         return;
       }
       this.locked = true;
@@ -199,13 +237,13 @@ export class GrappleSystem {
   }
 
   private release(): void {
-    if (this.tileCollider) { this.scene.physics.world.removeCollider(this.tileCollider); this.tileCollider = null; }
     if (this.enemyOverlap) { this.scene.physics.world.removeCollider(this.enemyOverlap); this.enemyOverlap = null; }
     this.player.setGrappleAttached(false);
     this.hook?.destroy();
     this.hook = null;
     this.attachedEnemy = null;
     this.locked = false;
+    this.isFloorAttachment = false;
     this.state = 'IDLE';
   }
 
@@ -274,9 +312,7 @@ export class GrappleSystem {
   }
 
   destroy(): void {
-    if (this.state !== 'IDLE') {
-      this.release();
-    }
+    if (this.state !== 'IDLE') this.release();
     this.ropeGraphics.destroy();
     this.hook?.destroy();
   }

@@ -39,12 +39,18 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio('shuriken_4', 'assets/SoundEffects/shuriken launch/sword.4.ogg');
     this.load.audio('shuriken_5', 'assets/SoundEffects/shuriken launch/sword.5.ogg');
 
-    // Claw SFX
-    this.load.audio('claw_1', 'assets/SoundEffects/claw launch/Socapex - Monster_Hurt.wav');
-    this.load.audio('claw_2', 'assets/SoundEffects/claw launch/Socapex - new_hits_2.wav');
-    this.load.audio('claw_3', 'assets/SoundEffects/claw launch/Socapex - new_hits_5.wav');
-    this.load.audio('claw_4', 'assets/SoundEffects/claw launch/Socapex - new_hits_7.wav');
-    this.load.audio('claw_5', 'assets/SoundEffects/claw launch/Socapex - new_hits_8.wav');
+    // Grapple launch SFX
+    this.load.audio('grapple_launch_1', 'assets/SoundEffects/grappling hook launch/melee sound.wav');
+    this.load.audio('grapple_launch_2', 'assets/SoundEffects/grappling hook launch/sword sound.wav');
+
+    // Melee SFX
+    this.load.audio('melee_hitnothing_1', 'assets/SoundEffects/melee hitnothing/animal melee sound.wav');
+    this.load.audio('melee_hitbehind_1', 'assets/SoundEffects/melee hitbehind/Socapex - new_hits_7.wav');
+    this.load.audio('melee_hitbehind_2', 'assets/SoundEffects/melee hitbehind/Socapex - new_hits_8.wav');
+    this.load.audio('melee_hitbehind_3', 'assets/SoundEffects/melee hitbehind/Socapex - new_hits_9.wav');
+    this.load.audio('melee_hitfront_1', 'assets/SoundEffects/melee hitfront/Socapex - new_hits_5.wav');
+    this.load.audio('melee_hitfront_2', 'assets/SoundEffects/melee hitfront/Socapex - new_hits_6.wav');
+    this.load.audio('melee_hittile_1', 'assets/SoundEffects/melee hittile/Socapex - small knock.wav');
 
     // Level 1 music
     this.load.audio('music_level1', 'assets/Music/BlackTrendMusic - Sport Games.mp3');
