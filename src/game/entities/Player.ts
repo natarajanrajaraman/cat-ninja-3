@@ -76,6 +76,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.reset(x, y); // resets position, velocity, acceleration
     body.setGravityY(BALANCE.GRAVITY);
+    body.setAllowGravity(true);
     this.canDoubleJump = false;
     this.dashCooldownTimer = 0;
     this.coyoteTimer = 0;
@@ -555,6 +556,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       case PlayerState.DEAD:
         this.play('dead', true);
+        break;
+      case PlayerState.GRAPPLE_FLYING:
+      case PlayerState.GRAPPLE_ATTACHED:
+        this.play('jump_air', true); // aerial hold pose while grappling
         break;
     }
   }
