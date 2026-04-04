@@ -215,10 +215,8 @@ export class GrappleSystem {
 
   destroy(): void {
     if (this.state !== 'IDLE') {
-      this.release();
+      this.release(); // release() already removes tileCollider and enemyOverlap
     }
-    if (this.tileCollider) { this.scene.physics.world.removeCollider(this.tileCollider); }
-    if (this.enemyOverlap) { this.scene.physics.world.removeCollider(this.enemyOverlap); }
     this.ropeGraphics.destroy();
     this.hook?.destroy();
   }

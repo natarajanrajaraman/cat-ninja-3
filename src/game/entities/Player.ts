@@ -221,6 +221,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.isInState(PlayerState.GRAPPLE_ATTACHED)) {
       // GrappleSystem handles all input while attached; just update visuals
       this.updateFacing();
+      this.updateClawHitbox();
       this.updateAnimation();
       this.updateInvulnFlicker();
       return;
