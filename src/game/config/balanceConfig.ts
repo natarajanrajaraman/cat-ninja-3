@@ -24,9 +24,6 @@ export const BALANCE = {
   GRAPPLE_PULL_FORCE: 800,   // px/s² — acceleration toward attachment point
   GRAPPLE_DAMAGE: 10,        // damage dealt to enemy on hook contact
 
-  // --- Slow-motion aim (legacy, will be replaced by GrappleSystem) ---
-  SLOWMO_TIMESCALE: 0.35,    // time scale while right-click held (1.0 = normal)
-
   // --- Fairness timings ---
   COYOTE_TIME: 100,          // ms: jump valid after walking off ledge
   JUMP_BUFFER_TIME: 100,     // ms: jump input queued before landing

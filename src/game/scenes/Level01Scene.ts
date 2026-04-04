@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Player } from '../entities/Player';
 import { DummyEnemy } from '../entities/DummyEnemy';
 import { CombatSystem } from '../systems/CombatSystem';
-import { SlowMoSystem } from '../systems/SlowMoSystem';
+import { GrappleSystem } from '../systems/GrappleSystem';
 import { INPUT } from '../config/inputConfig';
 import { BALANCE } from '../config/balanceConfig';
 import { PlayerState } from '../types/PlayerTypes';
@@ -12,7 +12,7 @@ export class Level01Scene extends Phaser.Scene {
   private player!: Player;
   private enemiesGroup!: Phaser.Physics.Arcade.Group;
   private combatSystem!: CombatSystem;
-  private slowMo!: SlowMoSystem;
+  private grapple!: GrappleSystem;
   private spawnX = 96;
   private spawnY = 790; // tilemap ground surface = row 24 × 36px = 864; player falls into position on start
   private prevMouseDown = false;
@@ -118,14 +118,14 @@ export class Level01Scene extends Phaser.Scene {
     // Launch UIScene overlay
     this.scene.launch('UIScene');
 
-    // Wire slow-mo system
-    this.slowMo = new SlowMoSystem(this);
+    // Wire grapple system
+    this.grapple = new GrappleSystem(this, this.player, ground, this.enemiesGroup);
 
     // Listen for player death
     this.game.events.on('player-died', this.handlePlayerDeath, this);
 
     this.events.once('shutdown', () => {
-      this.slowMo.destroy();
+      this.grapple.destroy();
       this.scene.stop('UIScene');
       this.game.events.off('player-died', this.handlePlayerDeath, this);
     });
@@ -213,20 +213,17 @@ export class Level01Scene extends Phaser.Scene {
     const isDown = pointer.leftButtonDown();
 
     // Fire only on transition from not-pressed to pressed
-    // canFire() checked before consumeAmmo() to avoid consuming ammo when locked
-    if (isDown && !this.prevMouseDown && this.slowMo.canFire() && this.player.consumeAmmo()) {
+    if (isDown && !this.prevMouseDown && this.player.consumeAmmo()) {
       this.combatSystem.fireShuriken(
         this.player.x, this.player.y,
         pointer.worldX, pointer.worldY,
       );
-      this.slowMo.onFired();
-      this.game.events.emit('slowmo-shot');
       this.game.events.emit('ammo-changed', this.player.getAmmo());
     }
 
     this.prevMouseDown = isDown;
     this.game.registry.set('playerPos', { x: Math.round(this.player.x), y: Math.round(this.player.y) });
-    this.slowMo.update(pointer);
+    this.grapple.update(pointer);
 
     this.updateFloatingHUD();
   }
