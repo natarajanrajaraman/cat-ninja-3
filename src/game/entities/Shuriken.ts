@@ -10,13 +10,15 @@ export class Shuriken extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Image is 48×48 — render at 32×32 in-game
-    this.setDisplaySize(32, 32);
+    // Image is 48×48 — render at 16×16 in-game (small, fast-moving projectile)
+    this.setDisplaySize(16, 16);
+    // Bright gold tint for high contrast against dark backgrounds
+    this.setTint(0xffe055);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     // Note: gravity is set via the PhysicsGroup config in CombatSystem (gravityY),
     // because the group's createCallbackHandler would overwrite any value set here.
-    body.setSize(20, 20); // hitbox smaller than display to feel fair
+    body.setSize(10, 10); // hitbox scaled with display size
 
     // Random launch sound
     const key = LAUNCH_SOUNDS[Math.floor(Math.random() * LAUNCH_SOUNDS.length)];

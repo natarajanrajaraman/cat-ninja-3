@@ -8,10 +8,10 @@ import { BALANCE } from '../config/balanceConfig';
 type GrappleState = 'IDLE' | 'FLYING' | 'ATTACHED_TILE' | 'ATTACHED_ENEMY';
 
 /**
- * Manages grappling hook: firing, attachment, rope pendulum physics, and rope rendering.
+ * Manages grappling hook: firing, attachment, rope pendulum physics, and chain rendering.
  *
  * Right-click fires the hook. On tile/enemy contact the player swings on the rope
- * and locks to the surface. Jump or right-click again to release.
+ * and locks to the surface (tile) or breaks on reach (enemy). Jump or right-click to release.
  */
 export class GrappleSystem {
   private readonly scene: Phaser.Scene;
@@ -28,7 +28,7 @@ export class GrappleSystem {
   private attachY = 0;
   private ropeLength = 0;
   private attachedEnemy: (Phaser.GameObjects.GameObject & IDamageable) | null = null;
-  private locked = false; // true once player reaches the surface
+  private locked = false; // true once player reaches a tile surface
 
   private prevRightDown = false;
 
@@ -63,11 +63,8 @@ export class GrappleSystem {
 
       case 'FLYING':
         this.updateFlying();
-        if (rightJustPressed) this.release(); // re-fire: release and immediately fire new hook
-        // Jump while flying: just release (player falls normally)
-        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-          this.release();
-        }
+        if (rightJustPressed) this.release();
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) this.release();
         break;
 
       case 'ATTACHED_TILE':
@@ -78,19 +75,26 @@ export class GrappleSystem {
           this.fire(pointer.worldX, pointer.worldY);
           return;
         }
-        // Jump to release
-        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-          this.release();
-        }
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) this.release();
         break;
     }
 
-    this.drawRope();
+    this.drawChain();
   }
 
   private fire(worldX: number, worldY: number): void {
+    // Spawn hook offset in front of player to avoid immediate self-collision with nearby tiles
+    const dx = worldX - this.player.x;
+    const dy = worldY - this.player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return;
+
+    const offset = BALANCE.HOOK_SPAWN_OFFSET;
+    const spawnX = this.player.x + (dx / dist) * offset;
+    const spawnY = this.player.y + (dy / dist) * offset;
+
     this.hook?.destroy();
-    this.hook = new GrappleHook(this.scene, this.player.x, this.player.y);
+    this.hook = new GrappleHook(this.scene, spawnX, spawnY);
     this.hook.launch(worldX, worldY);
     this.state = 'FLYING';
     this.locked = false;
@@ -146,46 +150,55 @@ export class GrappleSystem {
     if (!this.hook) return;
     if (this.hook.isOutOfRange()) {
       this.release();
+      return;
     }
+    this.hook.updateAngle(); // rotate to match parabolic velocity
   }
 
   private updateAttached(): void {
-    // Update attachment point for enemy (tracks enemy position if it moves)
+    // Update attachment point for enemy (tracks moving enemy)
     if (this.attachedEnemy) {
+      if (!(this.attachedEnemy as unknown as Phaser.GameObjects.GameObject).active) {
+        // Enemy was destroyed — release
+        this.release();
+        return;
+      }
       const go = this.attachedEnemy as unknown as Phaser.GameObjects.Components.Transform;
       this.attachX = go.x;
       this.attachY = go.y;
     }
 
-    if (this.locked) return; // already locked to surface — wait for jump
+    if (this.locked) return;
 
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     const dx = this.attachX - this.player.x;
     const dy = this.attachY - this.player.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    // Lock to surface when close enough
+    // On reach: tile → lock; enemy → break
     if (dist < 8) {
+      if (this.state === 'ATTACHED_ENEMY') {
+        this.release(); // enemy grapple pops on contact — don't oscillate
+        return;
+      }
       this.locked = true;
       body.setVelocity(0, 0);
       return;
     }
 
-    // Normalised direction toward attachment
     const nx = dx / dist;
     const ny = dy / dist;
 
-    // Pendulum constraint: if rope is taut, remove outward velocity component
+    // Pendulum constraint: remove outward velocity component when rope is taut
     if (dist >= this.ropeLength) {
       const vDotRope = body.velocity.x * nx + body.velocity.y * ny;
       if (vDotRope < 0) {
-        // Moving away — remove that component
         body.setVelocityX(body.velocity.x - nx * vDotRope);
         body.setVelocityY(body.velocity.y - ny * vDotRope);
       }
     }
 
-    // Pull force toward attachment point (creates the swing)
+    // Pull force toward attachment
     const dt = this.scene.game.loop.delta / 1000;
     body.setVelocityX(body.velocity.x + nx * BALANCE.GRAPPLE_PULL_FORCE * dt);
     body.setVelocityY(body.velocity.y + ny * BALANCE.GRAPPLE_PULL_FORCE * dt);
@@ -202,20 +215,73 @@ export class GrappleSystem {
     this.state = 'IDLE';
   }
 
-  private drawRope(): void {
+  /**
+   * Render the chain as alternating horizontal/vertical rectangular links along
+   * a quadratic bezier curve. Sag (downward bow) is proportional to rope slack.
+   */
+  private drawChain(): void {
     this.ropeGraphics.clear();
     if (this.state === 'IDLE') return;
 
-    const endX = this.state === 'FLYING' ? (this.hook?.x ?? this.player.x) : this.attachX;
-    const endY = this.state === 'FLYING' ? (this.hook?.y ?? this.player.y) : this.attachY;
+    const px = this.player.x;
+    const py = this.player.y;
+    const endX = this.state === 'FLYING' ? (this.hook?.x ?? px) : this.attachX;
+    const endY = this.state === 'FLYING' ? (this.hook?.y ?? py) : this.attachY;
 
-    this.ropeGraphics.lineStyle(2, 0xaaaaaa, 0.9);
-    this.ropeGraphics.lineBetween(this.player.x, this.player.y, endX, endY);
+    const dist = Phaser.Math.Distance.Between(px, py, endX, endY);
+    if (dist < 4) return;
+
+    // Sag: small during flight, grows as slack increases when attached
+    const sagAmount = this.state === 'FLYING'
+      ? dist * 0.06
+      : Math.max(4, Math.min(70, (this.ropeLength - dist) * 0.5));
+
+    // Quadratic bezier control point (pulls midpoint downward)
+    const ctrlX = (px + endX) / 2;
+    const ctrlY = (py + endY) / 2 + sagAmount;
+
+    // Sample count drives link density (~1 link per 10px)
+    const samples = Math.max(3, Math.floor(dist / 10));
+
+    let linkIndex = 0;
+    let prevBx = px;
+    let prevBy = py;
+
+    for (let i = 1; i <= samples; i++) {
+      const t = i / samples;
+      const mt = 1 - t;
+      const bx = mt * mt * px + 2 * mt * t * ctrlX + t * t * endX;
+      const by = mt * mt * py + 2 * mt * t * ctrlY + t * t * endY;
+
+      // Thin connector line between sample points
+      this.ropeGraphics.lineStyle(1, 0x555566, 0.6);
+      this.ropeGraphics.lineBetween(prevBx, prevBy, bx, by);
+
+      // Draw a chain link every other sample
+      if (i % 2 === 0) {
+        linkIndex++;
+        this.ropeGraphics.fillStyle(0x889aa8, 1.0);
+        if (linkIndex % 2 === 0) {
+          // Horizontal link
+          this.ropeGraphics.fillRect(bx - 4, by - 2, 8, 4);
+          this.ropeGraphics.lineStyle(1, 0x5a6b77, 0.9);
+          this.ropeGraphics.strokeRect(bx - 4, by - 2, 8, 4);
+        } else {
+          // Vertical link
+          this.ropeGraphics.fillRect(bx - 2, by - 4, 4, 8);
+          this.ropeGraphics.lineStyle(1, 0x5a6b77, 0.9);
+          this.ropeGraphics.strokeRect(bx - 2, by - 4, 4, 8);
+        }
+      }
+
+      prevBx = bx;
+      prevBy = by;
+    }
   }
 
   destroy(): void {
     if (this.state !== 'IDLE') {
-      this.release(); // release() already removes tileCollider and enemyOverlap
+      this.release();
     }
     this.ropeGraphics.destroy();
     this.hook?.destroy();

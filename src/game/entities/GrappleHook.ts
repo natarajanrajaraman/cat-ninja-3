@@ -3,7 +3,7 @@ import { BALANCE } from '../config/balanceConfig';
 
 /**
  * Flying grapple hook projectile.
- * Fired from player position toward a target point (capped at GRAPPLE_RANGE).
+ * Travels in a parabolic arc (gravity applied). Rotates to match velocity direction.
  * Destroyed on tile hit, enemy hit, or range exceeded.
  */
 export class GrappleHook extends Phaser.Physics.Arcade.Image {
@@ -18,25 +18,38 @@ export class GrappleHook extends Phaser.Physics.Arcade.Image {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setDisplaySize(12, 12);
-    this.setTint(0x888888);
+    // Elongated orange dart — will be rotated to match velocity direction
+    this.setDisplaySize(6, 14);
+    this.setTint(0xff8822);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setAllowGravity(false);
-    body.setSize(12, 12);
+    body.setGravityY(BALANCE.GRAPPLE_HOOK_GRAVITY); // parabolic arc
+    body.setSize(6, 6);                             // small collision box
   }
 
-  /** Aim and launch toward worldX/Y, clamped to GRAPPLE_RANGE. */
+  /** Aim and launch toward worldX/Y. */
   launch(toX: number, toY: number): void {
     const dx = toX - this.spawnX;
     const dy = toY - this.spawnY;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist === 0) return; // degenerate click — no-op
+    if (dist === 0) return;
 
     const vx = (dx / dist) * BALANCE.GRAPPLE_HOOK_SPEED;
     const vy = (dy / dist) * BALANCE.GRAPPLE_HOOK_SPEED;
-
     (this.body as Phaser.Physics.Arcade.Body).setVelocity(vx, vy);
+
+    // Initial rotation
+    this.angle = Phaser.Math.RadToDeg(Math.atan2(vy, vx)) + 90;
+  }
+
+  /** Rotate to match current velocity direction. Call each frame while flying. */
+  updateAngle(): void {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const vx = body.velocity.x;
+    const vy = body.velocity.y;
+    if (vx !== 0 || vy !== 0) {
+      this.angle = Phaser.Math.RadToDeg(Math.atan2(vy, vx)) + 90;
+    }
   }
 
   /** Returns true if hook has exceeded GRAPPLE_RANGE from spawn. */
