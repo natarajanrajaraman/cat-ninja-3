@@ -2,22 +2,19 @@ import Phaser from 'phaser';
 import { BALANCE } from '../config/balanceConfig';
 
 export class UIScene extends Phaser.Scene {
-  // --- Slow-mo overlay ---
-  private crosshair!: Phaser.GameObjects.Graphics;
-  private desaturateOverlay!: Phaser.GameObjects.Rectangle;
-  private slowMoActive = false;
-  private crosshairAlpha = 1;
-
   // --- Lives (screen-fixed) ---
   private livesText!: Phaser.GameObjects.Text;
   private posText!: Phaser.GameObjects.Text;
+
+  // --- Grapple reticle (always visible) ---
+  private reticle!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: 'UIScene', active: false });
   }
 
   create(): void {
-    const { width, height } = this.scale;
+    const { width } = this.scale;
 
     // Lives counter — top-left
     this.livesText = this.add.text(16, 16, this.livesLabel(BALANCE.PLAYER_MAX_LIVES), {
@@ -31,72 +28,47 @@ export class UIScene extends Phaser.Scene {
       color: '#aabbcc',
     }).setOrigin(1, 0);
 
-    // Full-screen desaturate overlay — hidden until slow-mo activates
-    this.desaturateOverlay = this.add.rectangle(
-      width / 2, height / 2,
-      width, height,
-      0x1a1a35,
-      0.25,
-    );
-    this.desaturateOverlay.setVisible(false);
-
-    // Crosshair (redrawn every frame while slow-mo active)
-    this.crosshair = this.add.graphics();
-    this.crosshair.setVisible(false);
+    // Grapple reticle graphics object (drawn every frame in update)
+    this.reticle = this.add.graphics();
 
     // Event listeners
-    this.game.events.on('slowmo-enter',         this.onSlowMoEnter,  this);
-    this.game.events.on('slowmo-exit',           this.onSlowMoExit,   this);
-    this.game.events.on('slowmo-shot',           this.onSlowMoShot,   this);
-    this.game.events.on('player-lives-changed',  this.onLivesChanged, this);
+    this.game.events.on('player-lives-changed', this.onLivesChanged, this);
 
     this.events.once('shutdown', () => {
-      this.game.events.off('slowmo-enter',        this.onSlowMoEnter,  this);
-      this.game.events.off('slowmo-exit',         this.onSlowMoExit,   this);
-      this.game.events.off('slowmo-shot',         this.onSlowMoShot,   this);
-      this.game.events.off('player-lives-changed',this.onLivesChanged, this);
+      this.game.events.off('player-lives-changed', this.onLivesChanged, this);
     });
   }
 
   update(): void {
+    // Player position readout
     const pos = this.game.registry.get('playerPos') as { x: number; y: number } | undefined;
     if (pos) this.posText.setText(`x: ${pos.x}  y: ${pos.y}`);
 
-    if (!this.slowMoActive) return;
-
+    // Grapple reticle — always drawn at pointer position
     const pointer = this.input.activePointer;
-    const { x, y } = pointer;
+    const cam = this.scene.get('Level01Scene').cameras.main;
+    const px = pointer.x;
+    const py = pointer.y;
 
-    this.crosshair.clear();
-    this.crosshair.lineStyle(2, 0xff4444, this.crosshairAlpha);
-    this.crosshair.strokeCircle(x, y, 8);
-    this.crosshair.lineBetween(x - 12, y, x + 12, y);
-    this.crosshair.lineBetween(x, y - 12, x, y + 12);
+    this.reticle.clear();
+    this.reticle.lineStyle(1, 0x88aaff, 0.9);
+    // Crosshair at cursor
+    this.reticle.strokeCircle(px, py, 6);
+    this.reticle.lineBetween(px - 10, py, px + 10, py);
+    this.reticle.lineBetween(px, py - 10, px, py + 10);
+
+    // Range circle around player (world → screen)
+    if (pos && cam) {
+      const screenX = (pos.x - cam.scrollX) * cam.zoom;
+      const screenY = (pos.y - cam.scrollY) * cam.zoom;
+      const screenRange = BALANCE.GRAPPLE_RANGE * cam.zoom;
+      this.reticle.lineStyle(1, 0x88aaff, 0.15);
+      this.reticle.strokeCircle(screenX, screenY, screenRange);
+    }
   }
 
   private onLivesChanged(lives: number): void {
     this.livesText.setText(this.livesLabel(lives));
-  }
-
-  private onSlowMoEnter(): void {
-    this.slowMoActive = true;
-    this.crosshairAlpha = 1;
-    this.crosshair.setVisible(true);
-    this.desaturateOverlay.setVisible(true);
-    this.input.setDefaultCursor('none');
-  }
-
-  private onSlowMoExit(): void {
-    this.slowMoActive = false;
-    this.crosshairAlpha = 1;
-    this.crosshair.setVisible(false);
-    this.crosshair.clear();
-    this.desaturateOverlay.setVisible(false);
-    this.input.setDefaultCursor('default');
-  }
-
-  private onSlowMoShot(): void {
-    this.crosshairAlpha = 0.4;
   }
 
   private livesLabel(lives: number): string {
