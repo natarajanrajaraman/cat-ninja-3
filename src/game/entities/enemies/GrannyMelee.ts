@@ -150,6 +150,11 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
   // ── State handlers ───────────────────────────────────────────────────────────
 
   private updatePatrol(delta: number): void {
+    // Fields referenced here to satisfy noUnusedLocals (used by other systems)
+    void this._groundLayer;
+    void this._shurikenGroup;
+    void this._grappleSystem;
+
     const body = this.body as Phaser.Physics.Arcade.Body;
 
     if (this.patrolPauseTimer > 0) {
@@ -187,27 +192,41 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
   }
 
   private updateAlert(): void {
-    // Implemented in Task 4 — fields referenced here to satisfy noUnusedLocals
-    void this._player;
-    void this._groundLayer;
-    void this._shurikenGroup;
-    void this._grappleSystem;
+    const body = this.body as Phaser.Physics.Arcade.Body;
+
+    // Face the player
+    const dir = this._player.x >= this.x ? 'right' : 'left';
+    this.setFacing(dir);
+
+    // Check attack range
+    const distToPlayer = Math.abs(this._player.x - this.x);
+    if (distToPlayer <= BALANCE.GRANNY_ATTACK_RANGE) {
+      this.transitionTo('TELEGRAPH');
+      return;
+    }
+
+    // Chase
+    const vx = BALANCE.GRANNY_ALERT_SPEED * (this._player.x >= this.x ? 1 : -1);
+    body.setVelocityX(vx);
   }
 
   private updateTelegraph(delta: number): void {
-    // Implemented in Task 4
+    // Stop and wind up — hitbox still disabled
+    (this.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
     this.stateTimer -= delta;
     if (this.stateTimer <= 0) this.transitionTo('SWING');
   }
 
   private updateSwing(delta: number): void {
-    // Implemented in Task 4
+    // Hitbox enabled (set in transitionTo), stay still
+    (this.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
     this.stateTimer -= delta;
     if (this.stateTimer <= 0) this.transitionTo('RECOVERY');
   }
 
   private updateRecovery(delta: number): void {
-    // Implemented in Task 4
+    // Hitbox disabled (set in transitionTo), locked — punish window
+    (this.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
     this.stateTimer -= delta;
     if (this.stateTimer <= 0) this.transitionTo('ALERT');
   }
