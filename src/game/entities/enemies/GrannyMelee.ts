@@ -57,7 +57,7 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
     this._grappleSystem = grappleSystem;
 
     this.setTexture('evilgranny');
-    this.setScale(2);
+    this.setScale(1);
     this.setDepth(10);
     this.play('granny_idle');
 

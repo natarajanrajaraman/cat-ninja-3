@@ -23,10 +23,10 @@ export class PreloadScene extends Phaser.Scene {
     // Shuriken — cropped single frame (48×48) from top-right of Sprites Shurikens.png
     this.load.image('shuriken', 'assets/Sprites/Shuriken.png');
 
-    // Evil Granny spritesheet (64×64 frames, 16 per row)
+    // Evil Granny spritesheet (128×128 frames, 16 per row)
     this.load.spritesheet('evilgranny',
       'assets/Sprites/Sprites EvilGrandma TRex.png',
-      { frameWidth: 64, frameHeight: 64 },
+      { frameWidth: 128, frameHeight: 128 },
     );
 
     // Tilemap — Tiled JSON export
