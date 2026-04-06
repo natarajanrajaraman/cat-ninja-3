@@ -1,0 +1,72 @@
+- generic [active] [ref=e1]:
+  - heading "GrannyMelee Sprite Sheet Tester" [level=1] [ref=e2]
+  - paragraph [ref=e3]:
+    - text: "Sprite:"
+    - code [ref=e4]: assets/Sprites/Sprites EvilGrandma TRex.png
+    - text: — 2048×2048
+  - generic [ref=e5]:
+    - heading "1. Sheet Overview — Grid Overlay" [level=2] [ref=e6]
+    - generic [ref=e7]:
+      - text: "Frame size:"
+      - combobox [ref=e8]:
+        - option "64×64 (32 cols × 32 rows)" [selected]
+        - option "128×128 (16 cols × 16 rows)"
+      - text: "Zoom:"
+      - combobox [ref=e9]:
+        - option "25%"
+        - option "50%" [selected]
+        - option "100%"
+  - generic [ref=e11]:
+    - heading "2. Option A — 64×64 frames (32 cols × 32 rows)" [level=2] [ref=e12]
+    - paragraph [ref=e13]: Current game assumption. Rows 0–6 assigned to Evil Granny.
+    - generic [ref=e14]:
+      - generic [ref=e17]: "Row 0: frames 0–3"
+      - generic [ref=e20]: "Row 0: frames 0–7"
+      - generic [ref=e23]: "Row 1: frames 0–7"
+      - generic [ref=e26]: "Row 2: frames 0–7"
+      - generic [ref=e29]: "Row 3: frames 0–7"
+      - generic [ref=e32]: "Row 4: frames 0–7"
+      - generic [ref=e35]: "Row 5: frames 0–3"
+      - generic [ref=e38]: "Row 6: frames 0–7"
+      - generic [ref=e41]: "Row 7: frames 0–7"
+      - generic [ref=e44]: "Row 8: frames 0–7"
+  - generic [ref=e45]:
+    - heading "3. Option B — 128×128 frames (16 cols × 16 rows)" [level=2] [ref=e46]
+    - paragraph [ref=e47]: Larger frames — each row has 16 frames instead of 32.
+    - generic [ref=e48]:
+      - generic [ref=e51]: "Row 0: frames 0–3"
+      - generic [ref=e54]: "Row 0: frames 0–7"
+      - generic [ref=e57]: "Row 0: frames 0–15"
+      - generic [ref=e60]: "Row 1: frames 0–7"
+      - generic [ref=e63]: "Row 1: frames 0–15"
+      - generic [ref=e66]: "Row 2: frames 0–7"
+      - generic [ref=e69]: "Row 3: frames 0–7"
+      - generic [ref=e72]: "Row 4: frames 0–7"
+      - generic [ref=e75]: "Row 5: frames 0–3"
+  - generic [ref=e76]:
+    - heading "4. Manual Frame Inspector" [level=2] [ref=e77]
+    - generic [ref=e78]:
+      - text: "Frame size:"
+      - combobox [ref=e79]:
+        - option "64×64" [selected]
+        - option "128×128"
+      - text: "Row:"
+      - spinbutton [ref=e80]: "0"
+      - text: "Start frame:"
+      - spinbutton [ref=e81]: "0"
+      - text: "End frame:"
+      - spinbutton [ref=e82]: "7"
+      - text: "FPS:"
+      - spinbutton [ref=e83]: "8"
+      - button "Play" [ref=e84] [cursor=pointer]
+    - generic [ref=e85]:
+      - generic [ref=e88]: 64×64 — Row 0, frames 0–7
+      - generic [ref=e89]:
+        - generic [ref=e92]: f0
+        - generic [ref=e95]: f1
+        - generic [ref=e98]: f2
+        - generic [ref=e101]: f3
+        - generic [ref=e104]: f4
+        - generic [ref=e107]: f5
+        - generic [ref=e110]: f6
+        - generic [ref=e113]: f7

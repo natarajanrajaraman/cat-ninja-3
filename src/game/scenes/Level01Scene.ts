@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Player } from '../entities/Player';
-import { GrannyMelee } from '../entities/enemies/GrannyMelee';
+import { DirtyHarry } from '../entities/enemies/DirtyHarry';
 import { CombatSystem } from '../systems/CombatSystem';
 import { GrappleSystem } from '../systems/GrappleSystem';
 import { INPUT } from '../config/inputConfig';
@@ -21,8 +21,8 @@ export class Level01Scene extends Phaser.Scene {
   private activeCheckpoint: Checkpoint | null = null;
   // @ts-ignore TS6133 — stored to maintain class references across scene restarts
   private checkpoints: Checkpoint[] = [];
-  private grannies: GrannyMelee[] = [];
-  private attackOverlaps: Map<GrannyMelee, Phaser.Physics.Arcade.Collider> = new Map();
+  private grannies: DirtyHarry[] = [];
+  private attackOverlaps: Map<DirtyHarry, Phaser.Physics.Arcade.Collider> = new Map();
 
   // Floating HUD (world-space, follows player)
   private floatHpBg!: Phaser.GameObjects.Rectangle;
@@ -159,7 +159,7 @@ export class Level01Scene extends Phaser.Scene {
     ];
 
     positions.forEach(({ x, y }) => {
-      const granny = new GrannyMelee(
+      const granny = new DirtyHarry(
         this,
         x, y,
         this.player,

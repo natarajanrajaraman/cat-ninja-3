@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh auth:*)",
+      "Bash(git -C \"C:/Users/User/ClaudeProjects/Cat Ninja 2026-03-30\" status)",
+      "Bash(gh api:*)",
+      "Bash(gh repo:*)",
+      "Bash(npm install:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node -e \":*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -i \"frame\\\\|row\\\\|animation\" Design/*.md)",
+      "Bash(grep -r \"shuriken_spin\\\\|shuriken_[1-5]\" src/ --include=*.ts)",
+      "Bash(find 'C:/Users/User/ClaudeProjects/Cat Ninja 2026-03-30/src' -type f -name *.ts)",
+      "Bash(find . -name HealthBar* -type f)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "WebFetch(domain:docs.phaser.io)"
+    ]
+  }
+}

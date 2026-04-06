@@ -6,10 +6,10 @@ import { ConeOfVision } from './ConeOfVision';
 import { Player } from '../Player';
 import { GrappleSystem } from '../../systems/GrappleSystem';
 
-type GrannyState = 'PATROL' | 'ALERT' | 'TELEGRAPH' | 'SWING' | 'RECOVERY' | 'HURT' | 'DEAD';
+type DirtyHarryState = 'PATROL' | 'ALERT' | 'TELEGRAPH' | 'SWING' | 'RECOVERY' | 'HURT' | 'DEAD';
 
-export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamageable {
-  private _state: GrannyState = 'PATROL';
+export class DirtyHarry extends Phaser.Physics.Arcade.Sprite implements IDamageable {
+  private _state: DirtyHarryState = 'PATROL';
   private health: number;
   private _facing: 'left' | 'right' = 'right';
   private everAlerted = false;
@@ -45,7 +45,7 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
     shurikenGroup: Phaser.Physics.Arcade.Group,
     grappleSystem: GrappleSystem,
   ) {
-    super(scene, x, y, 'evilgranny');
+    super(scene, x, y, 'heroenemy');
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -56,18 +56,18 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
     this._shurikenGroup = shurikenGroup;
     this._grappleSystem = grappleSystem;
 
-    this.setTexture('evilgranny');
+    this.setTexture('heroenemy');
     this.setScale(1);
     this.setDepth(10);
     this.play('granny_idle');
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setGravityY(BALANCE.GRAVITY);
-    body.setSize(48, 90);
-    body.setOffset(40, 20); // 48px wide centred in 128px frame; feet land at ~110px in frame
+    body.setSize(36, 60);
+    body.setOffset(22, 3); // feet at ~63px in 94px frame; offset+height=63 aligns sprite bottom with ground
 
     this.health = BALANCE.GRANNY_HEALTH;
-    this.healthBar = new HealthBar(scene, 48, -72);
+    this.healthBar = new HealthBar(scene, 40, -54);
 
     // Attack hitbox — disabled until SWING state
     this.attackHitbox = scene.physics.add.image(x, y, '__DEFAULT') as Phaser.Physics.Arcade.Image;
@@ -301,7 +301,7 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
     this.setFlipX(dir === 'left');
   }
 
-  private transitionTo(state: GrannyState): void {
+  private transitionTo(state: DirtyHarryState): void {
     if (this._state === state) return;
     this._state = state;
 

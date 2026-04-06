@@ -3,7 +3,7 @@ import { Player } from '../entities/Player';
 import { Shuriken } from '../entities/Shuriken';
 import { IDamageable } from '../types/CombatTypes';
 import { BALANCE } from '../config/balanceConfig';
-import { GrannyMelee } from '../entities/enemies/GrannyMelee';
+import { DirtyHarry } from '../entities/enemies/DirtyHarry';
 
 export class CombatSystem {
   private scene: Phaser.Scene;
@@ -28,7 +28,7 @@ export class CombatSystem {
     // Debounce: prevent the same attack swing from playing a hit sound more than once
     let lastMeleeHitSoundTime = -Infinity;
 
-    // 1. Claw hits enemies — behind-attack multiplier for GrannyMelee; front/behind sound
+    // 1. Claw hits enemies — behind-attack multiplier for DirtyHarry; front/behind sound
     scene.physics.add.overlap(
       player.clawHitbox,
       enemiesGroup,
@@ -37,7 +37,7 @@ export class CombatSystem {
 
         // Behind-attack multiplier
         let damage = BALANCE.CLAW_DAMAGE;
-        if (enemyObj instanceof GrannyMelee) {
+        if (enemyObj instanceof DirtyHarry) {
           const grannyFacing = enemyObj.getFacing();
           const fromBehind = (grannyFacing === 'right' && player.x < enemyObj.x) ||
                              (grannyFacing === 'left'  && player.x > enemyObj.x);

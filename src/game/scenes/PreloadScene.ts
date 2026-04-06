@@ -23,10 +23,10 @@ export class PreloadScene extends Phaser.Scene {
     // Shuriken — cropped single frame (48×48) from top-right of Sprites Shurikens.png
     this.load.image('shuriken', 'assets/Sprites/Shuriken.png');
 
-    // Evil Granny spritesheet (128×128 frames, 16 per row)
-    this.load.spritesheet('evilgranny',
-      'assets/Sprites/Sprites EvilGrandma TRex.png',
-      { frameWidth: 128, frameHeight: 128 },
+    // Placeholder enemy spritesheet — hero_spritesheet.png, 80×94 frames, 8 cols × 5 rows
+    this.load.spritesheet('heroenemy',
+      'assets/Sprites/hero_spritesheet.png',
+      { frameWidth: 80, frameHeight: 94 },
     );
 
     // Tilemap — Tiled JSON export
@@ -161,40 +161,45 @@ export class PreloadScene extends Phaser.Scene {
       repeat: 0,
     });
 
-    // --- Evil Granny ---
+    // --- Placeholder enemy (hero_spritesheet, 80×94, 8 cols × 5 rows) ---
+    // Row 0 (f0–7):  unknown  → reused as hurt
+    // Row 1 (f8–15): idle
+    // Row 2 (f16–23): walk right
+    // Row 3 (f24–31): shoot right → telegraph + swing
+    // Row 4 (f32–39): die
     anims.create({
       key: 'granny_idle',
-      frames: anims.generateFrameNumbers('evilgranny', { start: 0, end: 3 }),
-      frameRate: 6,
+      frames: anims.generateFrameNumbers('heroenemy', { start: 8, end: 15 }),
+      frameRate: 8,
       repeat: -1,
     });
     anims.create({
       key: 'granny_walk',
-      frames: anims.generateFrameNumbers('evilgranny', { start: 32, end: 39 }),
+      frames: anims.generateFrameNumbers('heroenemy', { start: 16, end: 23 }),
       frameRate: 10,
       repeat: -1,
     });
     anims.create({
       key: 'granny_telegraph',
-      frames: anims.generateFrameNumbers('evilgranny', { start: 48, end: 55 }),
-      frameRate: 10,
+      frames: anims.generateFrameNumbers('heroenemy', { start: 24, end: 31 }),
+      frameRate: 8,
       repeat: 0,
     });
     anims.create({
       key: 'granny_swing',
-      frames: anims.generateFrameNumbers('evilgranny', { start: 64, end: 71 }),
+      frames: anims.generateFrameNumbers('heroenemy', { start: 24, end: 31 }),
       frameRate: 14,
       repeat: 0,
     });
     anims.create({
       key: 'granny_hurt',
-      frames: anims.generateFrameNumbers('evilgranny', { start: 80, end: 83 }),
+      frames: anims.generateFrameNumbers('heroenemy', { start: 0, end: 7 }),
       frameRate: 10,
       repeat: 0,
     });
     anims.create({
       key: 'granny_dead',
-      frames: anims.generateFrameNumbers('evilgranny', { start: 96, end: 103 }),
+      frames: anims.generateFrameNumbers('heroenemy', { start: 32, end: 39 }),
       frameRate: 8,
       repeat: 0,
     });

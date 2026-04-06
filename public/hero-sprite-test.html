@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hero Spritesheet — 80×94</title>
+<style>
+  body { background: #1a1a2e; color: #eee; font-family: monospace; padding: 16px; }
+  h1 { color: #f0c040; }
+  h2 { color: #88ccff; margin-top: 32px; border-bottom: 1px solid #444; padding-bottom: 4px; }
+  .section { background: #16213e; border: 1px solid #444; border-radius: 6px; padding: 16px; margin-bottom: 24px; }
+  canvas { display: block; image-rendering: pixelated; }
+  .row-strip { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; margin-top: 12px; }
+  .frame-box { text-align: center; }
+  .frame-box span { display: block; font-size: 10px; color: #aaa; margin-top: 3px; }
+  .anim-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 16px; }
+  .anim-info { min-width: 140px; }
+  .anim-info .label { color: #f0c040; font-size: 14px; font-weight: bold; }
+  .anim-info .frames { color: #aaa; font-size: 11px; margin-top: 4px; }
+  label { color: #ffd; margin-right: 8px; }
+  select, input { background: #2a2a4e; color: #eee; border: 1px solid #666; padding: 3px 6px; border-radius: 3px; }
+  .controls { margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .stat { color: #aaffaa; font-size: 13px; margin: 4px 0; }
+  button { background: #2244aa; color: #fff; border: none; border-radius: 3px; padding: 5px 14px; cursor: pointer; font-family: monospace; }
+  button:hover { background: #3355cc; }
+  .checkerboard { background-image:
+    linear-gradient(45deg,#333 25%,transparent 25%),
+    linear-gradient(-45deg,#333 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,#333 75%),
+    linear-gradient(-45deg,transparent 75%,#333 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
+  }
+</style>
+</head>
+<body>
+<h1>Hero Spritesheet Inspector — 80×94</h1>
+<p class="stat">640×470 px — 8 cols × 5 rows = 40 frames</p>
+
+<!-- SECTION 1: Grid overview -->
+<div class="section">
+  <h2>1. Grid Overview (80×94 frames)</h2>
+  <canvas id="gridCanvas"></canvas>
+</div>
+
+<!-- SECTION 2: Row-by-row animation previews -->
+<div class="section">
+  <h2>2. Row Animations — identify each row's purpose</h2>
+  <div id="rowAnims"></div>
+</div>
+
+<!-- SECTION 3: All individual frames -->
+<div class="section">
+  <h2>3. All 40 Frames (2× zoom, checkerboard background)</h2>
+  <div id="allFrames" class="row-strip"></div>
+</div>
+
+<!-- SECTION 4: Custom range animator -->
+<div class="section">
+  <h2>4. Custom Range Animator</h2>
+  <div class="controls">
+    <label>Start frame:</label>
+    <input id="animStart" type="number" value="0" min="0" max="39" style="width:50px">
+    <label>End frame:</label>
+    <input id="animEnd" type="number" value="7" min="0" max="39" style="width:50px">
+    <label>FPS:</label>
+    <input id="animFps" type="number" value="8" min="1" max="30" style="width:50px">
+    <button onclick="startCustomAnim()">Play</button>
+  </div>
+  <div style="display:flex;gap:16px;align-items:flex-start;margin-top:8px;">
+    <div class="frame-box">
+      <canvas id="customCanvas" class="checkerboard" width="160" height="188" style="border:2px solid #666;"></canvas>
+      <span id="customLabel">—</span>
+    </div>
+    <div id="customStrip" class="row-strip"></div>
+  </div>
+</div>
+
+<script>
+const FW = 80, FH = 94, COLS = 8, ROWS = 5;
+const IMG_W = 640, IMG_H = 470;
+const SCALE = 2;
+
+const img = new Image();
+img.src = 'assets/Sprites/hero_spritesheet.png';
+
+// ── Grid overview ─────────────────────────────────────────────────────────────
+function drawGrid() {
+  const c = document.getElementById('gridCanvas');
+  c.width = IMG_W * SCALE; c.height = IMG_H * SCALE;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(img, 0, 0, c.width, c.height);
+  // Grid
+  ctx.strokeStyle = 'rgba(255,80,80,0.65)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= COLS; x++) {
+    const px = Math.round(x * FW * SCALE) + 0.5;
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, c.height); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    const py = Math.round(y * FH * SCALE) + 0.5;
+    ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(c.width, py); ctx.stroke();
+  }
+  // Frame index labels
+  ctx.fillStyle = 'rgba(255,220,80,0.95)';
+  ctx.font = '11px monospace';
+  for (let r = 0; r < ROWS; r++) {
+    for (let cc = 0; cc < COLS; cc++) {
+      const idx = r * COLS + cc;
+      ctx.fillText(idx, cc * FW * SCALE + 3, r * FH * SCALE + 14);
+    }
+  }
+  // Row labels on right
+  ctx.fillStyle = 'rgba(136,204,255,0.95)';
+  ctx.font = 'bold 13px monospace';
+  for (let r = 0; r < ROWS; r++) {
+    ctx.fillText(`row ${r}`, IMG_W * SCALE + 4, r * FH * SCALE + FH * SCALE / 2 + 5);
+  }
+  c.width = IMG_W * SCALE + 60; // add space for row labels — redraw
+  const c2 = document.getElementById('gridCanvas');
+  c2.width = IMG_W * SCALE + 60; c2.height = IMG_H * SCALE;
+  const ctx2 = c2.getContext('2d');
+  ctx2.imageSmoothingEnabled = false;
+  ctx2.drawImage(img, 0, 0, IMG_W * SCALE, IMG_H * SCALE);
+  ctx2.strokeStyle = 'rgba(255,80,80,0.65)'; ctx2.lineWidth = 1;
+  for (let x = 0; x <= COLS; x++) {
+    const px = Math.round(x * FW * SCALE)+0.5;
+    ctx2.beginPath(); ctx2.moveTo(px,0); ctx2.lineTo(px, IMG_H*SCALE); ctx2.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    const py = Math.round(y * FH * SCALE)+0.5;
+    ctx2.beginPath(); ctx2.moveTo(0,py); ctx2.lineTo(IMG_W*SCALE+60,py); ctx2.stroke();
+  }
+  ctx2.fillStyle = 'rgba(255,220,80,0.95)'; ctx2.font = '11px monospace';
+  for (let r = 0; r < ROWS; r++)
+    for (let cc = 0; cc < COLS; cc++)
+      ctx2.fillText(r*COLS+cc, cc*FW*SCALE+3, r*FH*SCALE+14);
+  ctx2.fillStyle = 'rgba(136,204,255,0.95)'; ctx2.font = 'bold 13px monospace';
+  for (let r = 0; r < ROWS; r++)
+    ctx2.fillText(`row ${r}  (f${r*COLS}–f${r*COLS+COLS-1})`, IMG_W*SCALE+4, r*FH*SCALE + Math.round(FH*SCALE/2)+5);
+}
+
+// ── Row animations ────────────────────────────────────────────────────────────
+const rowTimers = [];
+function buildRowAnims() {
+  const container = document.getElementById('rowAnims');
+  for (let r = 0; r < ROWS; r++) {
+    const startF = r * COLS, endF = startF + COLS - 1;
+    const row = document.createElement('div');
+    row.className = 'anim-row';
+
+    // Animated canvas
+    const animScale = 2;
+    const cv = document.createElement('canvas');
+    cv.width = FW * animScale; cv.height = FH * animScale;
+    cv.style.imageRendering = 'pixelated';
+    cv.style.border = '2px solid #555';
+    cv.className = 'checkerboard';
+    const ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    // Info
+    const info = document.createElement('div');
+    info.className = 'anim-info';
+    info.innerHTML = `<div class="label">Row ${r}</div><div class="frames">Frames ${startF}–${endF}</div>`;
+
+    // Individual frames strip
+    const strip = document.createElement('div');
+    strip.className = 'row-strip';
+    for (let f = startF; f <= endF; f++) {
+      const sx = (f % COLS) * FW, sy = Math.floor(f / COLS) * FH;
+      const fc = document.createElement('canvas');
+      fc.width = FW; fc.height = FH;
+      fc.style.imageRendering = 'pixelated';
+      fc.style.border = '1px solid #444';
+      fc.className = 'checkerboard';
+      const fctx = fc.getContext('2d');
+      fctx.imageSmoothingEnabled = false;
+      fctx.drawImage(img, sx, sy, FW, FH, 0, 0, FW, FH);
+      const fb = document.createElement('div');
+      fb.className = 'frame-box';
+      const lbl = document.createElement('span');
+      lbl.textContent = `f${f}`;
+      fb.appendChild(fc);
+      fb.appendChild(lbl);
+      strip.appendChild(fb);
+    }
+
+    row.appendChild(cv);
+    row.appendChild(info);
+    row.appendChild(strip);
+    container.appendChild(row);
+
+    // Animate at 8fps
+    let fi = 0;
+    const frames = [];
+    for (let f = startF; f <= endF; f++)
+      frames.push({ sx: (f%COLS)*FW, sy: Math.floor(f/COLS)*FH });
+    function tick(ctx, frames, fi_ref, cv) {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      const fr = frames[fi_ref[0] % frames.length];
+      ctx.drawImage(img, fr.sx, fr.sy, FW, FH, 0, 0, cv.width, cv.height);
+      fi_ref[0]++;
+    }
+    const fi_ref = [0];
+    tick(ctx, frames, fi_ref, cv);
+    rowTimers.push(setInterval(() => tick(ctx, frames, fi_ref, cv), 1000/8));
+  }
+}
+
+// ── All frames ────────────────────────────────────────────────────────────────
+function buildAllFrames() {
+  const container = document.getElementById('allFrames');
+  for (let f = 0; f < COLS * ROWS; f++) {
+    const sx = (f % COLS) * FW, sy = Math.floor(f / COLS) * FH;
+    const cv = document.createElement('canvas');
+    cv.width = FW * SCALE; cv.height = FH * SCALE;
+    cv.style.imageRendering = 'pixelated';
+    cv.style.border = '1px solid #555';
+    cv.className = 'checkerboard';
+    const ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, sx, sy, FW, FH, 0, 0, FW * SCALE, FH * SCALE);
+    const box = document.createElement('div');
+    box.className = 'frame-box';
+    const lbl = document.createElement('span');
+    lbl.textContent = `#${f}`;
+    box.appendChild(cv);
+    box.appendChild(lbl);
+    container.appendChild(box);
+  }
+}
+
+// ── Custom range ──────────────────────────────────────────────────────────────
+let customTimer = null;
+function startCustomAnim() {
+  if (customTimer) clearInterval(customTimer);
+  const start = parseInt(document.getElementById('animStart').value);
+  const end   = parseInt(document.getElementById('animEnd').value);
+  const fps   = parseInt(document.getElementById('animFps').value);
+  const c = document.getElementById('customCanvas');
+  c.width = FW * 2; c.height = FH * 2;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  document.getElementById('customLabel').textContent = `Frames ${start}–${end} @ ${fps}fps`;
+  const strip = document.getElementById('customStrip');
+  strip.innerHTML = '';
+  for (let f = start; f <= end; f++) {
+    const sx = (f%COLS)*FW, sy = Math.floor(f/COLS)*FH;
+    const fc = document.createElement('canvas');
+    fc.width = FW*SCALE; fc.height = FH*SCALE;
+    fc.style.imageRendering = 'pixelated';
+    fc.style.border = '1px solid #555';
+    fc.className = 'checkerboard';
+    const fctx = fc.getContext('2d');
+    fctx.imageSmoothingEnabled = false;
+    fctx.drawImage(img, sx, sy, FW, FH, 0, 0, FW*SCALE, FH*SCALE);
+    const fb = document.createElement('div');
+    fb.className = 'frame-box';
+    const lbl2 = document.createElement('span');
+    lbl2.textContent = `f${f}`;
+    fb.appendChild(fc); fb.appendChild(lbl2);
+    strip.appendChild(fb);
+  }
+  const frames = [];
+  for (let f = start; f <= end; f++)
+    frames.push({ sx:(f%COLS)*FW, sy:Math.floor(f/COLS)*FH });
+  let fi = 0;
+  function tick() {
+    ctx.clearRect(0,0,c.width,c.height);
+    const fr = frames[fi%frames.length];
+    ctx.drawImage(img,fr.sx,fr.sy,FW,FH,0,0,c.width,c.height);
+    fi++;
+  }
+  tick();
+  customTimer = setInterval(tick, 1000/fps);
+}
+
+img.onload = function() {
+  drawGrid();
+  buildRowAnims();
+  buildAllFrames();
+  startCustomAnim();
+};
+img.onerror = () => alert('Could not load hero_spritesheet.png');
+</script>
+</body>
+</html>
