@@ -105,7 +105,7 @@ export class Level01Scene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
     // Spawn enemies — after combat + grapple exist
-    const TEMP_GROUND_Y = 864;
+    const TEMP_GROUND_Y = 828; // row 23 × 36px — top surface of the 3-row main floor
     this.spawnEnemies(TEMP_GROUND_Y, ground);
 
     // Instant-kill if player falls below world
@@ -149,7 +149,7 @@ export class Level01Scene extends Phaser.Scene {
   }
 
   private spawnEnemies(groundY: number, groundLayer: Phaser.Tilemaps.TilemapLayer): void {
-    const spawnY = groundY - 32; // centre of body (64px tall, bottom on ground)
+    const spawnY = groundY - 64; // spawn above ground so body doesn't start inside tiles
     const positions = [
       { x: 400,  y: spawnY },
       { x: 800,  y: spawnY },
