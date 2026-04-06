@@ -3,6 +3,7 @@ import { Player } from '../entities/Player';
 import { Shuriken } from '../entities/Shuriken';
 import { IDamageable } from '../types/CombatTypes';
 import { BALANCE } from '../config/balanceConfig';
+import { GrannyMelee } from '../entities/enemies/GrannyMelee';
 
 export class CombatSystem {
   private scene: Phaser.Scene;
@@ -27,13 +28,22 @@ export class CombatSystem {
     // Debounce: prevent the same attack swing from playing a hit sound more than once
     let lastMeleeHitSoundTime = -Infinity;
 
-    // 1. Claw hits enemies — play front/behind hit sound once per swing
+    // 1. Claw hits enemies — behind-attack multiplier for GrannyMelee; front/behind sound
     scene.physics.add.overlap(
       player.clawHitbox,
       enemiesGroup,
       (_hitbox, enemyObj) => {
         const enemy = enemyObj as unknown as IDamageable;
-        enemy.takeDamage(BALANCE.CLAW_DAMAGE);
+
+        // Behind-attack multiplier
+        let damage = BALANCE.CLAW_DAMAGE;
+        if (enemyObj instanceof GrannyMelee) {
+          const grannyFacing = enemyObj.getFacing();
+          const fromBehind = (grannyFacing === 'right' && player.x < enemyObj.x) ||
+                             (grannyFacing === 'left'  && player.x > enemyObj.x);
+          if (fromBehind) damage = BALANCE.CLAW_DAMAGE * BALANCE.GRANNY_BEHIND_MULTIPLIER;
+        }
+        enemy.takeDamage(damage);
 
         const now = scene.time.now;
         if (now - lastMeleeHitSoundTime > BALANCE.CLAW_COOLDOWN_MS * 0.8) {
@@ -88,6 +98,10 @@ export class CombatSystem {
         }
       },
     );
+  }
+
+  getShurikenGroup(): Phaser.Physics.Arcade.Group {
+    return this.shurikenGroup;
   }
 
   fireShuriken(fromX: number, fromY: number, worldX: number, worldY: number): void {

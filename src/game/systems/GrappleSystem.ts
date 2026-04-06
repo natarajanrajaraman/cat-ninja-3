@@ -311,6 +311,12 @@ export class GrappleSystem {
     }
   }
 
+  /** Returns the flying hook's current world position, or null if not in flight. */
+  getHookPosition(): { x: number; y: number } | null {
+    if (this.state !== 'FLYING' || !this.hook) return null;
+    return { x: this.hook.x, y: this.hook.y };
+  }
+
   destroy(): void {
     if (this.state !== 'IDLE') this.release();
     this.ropeGraphics.destroy();
