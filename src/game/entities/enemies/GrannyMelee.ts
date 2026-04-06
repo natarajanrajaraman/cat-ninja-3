@@ -63,8 +63,8 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setGravityY(BALANCE.GRAVITY);
-    body.setSize(36, 60);
-    body.setOffset(14, 4);
+    body.setSize(48, 90);
+    body.setOffset(40, 20); // 48px wide centred in 128px frame; feet land at ~110px in frame
 
     this.health = BALANCE.GRANNY_HEALTH;
     this.healthBar = new HealthBar(scene, 48, -72);
