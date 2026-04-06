@@ -40,6 +40,25 @@ export const BALANCE = {
   SHURIKEN_MAX_AMMO: 10,
   SHURIKEN_LIFETIME: 2500,   // ms before auto-destroy if no hit
 
+  // --- Granny Melee ---
+  GRANNY_HEALTH: 60,
+  GRANNY_PATROL_SPEED: 60,        // px/s passive walk
+  GRANNY_ALERT_SPEED: 130,        // px/s chasing
+  GRANNY_PATROL_WIDTH: 200,       // px each side from spawn X
+  GRANNY_ATTACK_RANGE: 70,        // px — triggers telegraph
+  GRANNY_ATTACK_DAMAGE: 20,
+  GRANNY_TELEGRAPH_MS: 500,
+  GRANNY_SWING_MS: 150,
+  GRANNY_RECOVERY_MS: 400,
+  GRANNY_HURT_MS: 250,
+  GRANNY_BEHIND_MULTIPLIER: 3.0,
+  GRANNY_CONE_PASSIVE_ANGLE: 35,  // degrees, half-angle each side
+  GRANNY_CONE_PASSIVE_RANGE: 200, // px
+  GRANNY_CONE_ALERT_ANGLE: 60,    // degrees, half-angle each side
+  GRANNY_CONE_ALERT_RANGE: 350,   // px
+  GRANNY_BODY_ALERT_RADIUS: 300,  // px — distance for body-detection alert
+  GRANNY_PROPAGATION_RADIUS: 250, // px — distance for alert-spread (no LOS check)
+
   // --- Player health / lives ---
   PLAYER_MAX_HEALTH: 100,
   PLAYER_MAX_LIVES: 9,
