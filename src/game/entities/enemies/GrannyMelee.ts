@@ -272,7 +272,6 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
   private updateHurt(delta: number): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
-    this.play('granny_hurt', true);
     this.stateTimer -= delta;
     const flash = Math.floor(this.stateTimer / 60) % 2 === 0;
     this.setTint(flash ? 0xffffff : 0xdddddd);
@@ -312,6 +311,7 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
       case 'HURT':
         this.stateTimer = BALANCE.GRANNY_HURT_MS;
         body.setVelocityX(0);
+        this.play('granny_hurt', true);
         break;
 
       case 'DEAD': {

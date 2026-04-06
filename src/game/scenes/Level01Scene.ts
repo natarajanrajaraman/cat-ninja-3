@@ -22,6 +22,7 @@ export class Level01Scene extends Phaser.Scene {
   // @ts-ignore TS6133 — stored to maintain class references across scene restarts
   private checkpoints: Checkpoint[] = [];
   private grannies: GrannyMelee[] = [];
+  private attackOverlaps: Map<GrannyMelee, Phaser.Physics.Arcade.Collider> = new Map();
 
   // Floating HUD (world-space, follows player)
   private floatHpBg!: Phaser.GameObjects.Rectangle;
@@ -170,7 +171,7 @@ export class Level01Scene extends Phaser.Scene {
       this.grannies.push(granny);
 
       // Wire granny attack hitbox → player damage
-      this.physics.add.overlap(
+      const attackOverlap = this.physics.add.overlap(
         granny.attackHitbox,
         this.player,
         () => {
@@ -179,6 +180,7 @@ export class Level01Scene extends Phaser.Scene {
           }
         },
       );
+      this.attackOverlaps.set(granny, attackOverlap);
 
       // Collide granny with ground so she walks on platforms
       this.physics.add.collider(granny, groundLayer);
@@ -186,6 +188,18 @@ export class Level01Scene extends Phaser.Scene {
 
     // Body-detection alert: when a granny dies, nearby grannies with LOS become alert
     this.events.on('enemy-died', ({ x, y }: { x: number; y: number }) => {
+      // Remove attack overlap for the granny that just died (matched by position)
+      const deadGranny = this.grannies.find(
+        g => Math.abs(g.x - x) < 2 && Math.abs(g.y - y) < 2
+      );
+      if (deadGranny) {
+        const overlap = this.attackOverlaps.get(deadGranny);
+        if (overlap) {
+          this.physics.world.removeCollider(overlap);
+          this.attackOverlaps.delete(deadGranny);
+        }
+      }
+
       this.grannies.forEach(g => {
         if (!g.active || g.isAlerted()) return;
         const dist = Phaser.Math.Distance.Between(g.x, g.y, x, y);
