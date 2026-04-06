@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Player } from '../entities/Player';
-import { DummyEnemy } from '../entities/DummyEnemy';
+import { GrannyMelee } from '../entities/enemies/GrannyMelee';
 import { CombatSystem } from '../systems/CombatSystem';
 import { GrappleSystem } from '../systems/GrappleSystem';
 import { INPUT } from '../config/inputConfig';
@@ -21,6 +21,7 @@ export class Level01Scene extends Phaser.Scene {
   private activeCheckpoint: Checkpoint | null = null;
   // @ts-ignore TS6133 — stored to maintain class references across scene restarts
   private checkpoints: Checkpoint[] = [];
+  private grannies: GrannyMelee[] = [];
 
   // Floating HUD (world-space, follows player)
   private floatHpBg!: Phaser.GameObjects.Rectangle;
@@ -90,16 +91,21 @@ export class Level01Scene extends Phaser.Scene {
       );
     });
 
-    // Spawn dummy enemies — ground surface = row 24 × 36px = 864; update positions after level is laid out
-    const TEMP_GROUND_Y = 864;
+    // Enemies group (empty at first)
     this.enemiesGroup = this.physics.add.group();
-    this.spawnEnemies(TEMP_GROUND_Y);
 
-    // Wire combat — pass ground layer instead of platforms StaticGroup
+    // Combat system — must exist before spawning so getShurikenGroup() is available
     this.combatSystem = new CombatSystem(this, this.player, ground, this.enemiesGroup);
+
+    // Grapple system — must exist before spawning so getHookPosition() is available
+    this.grapple = new GrappleSystem(this, this.player, ground, this.enemiesGroup);
 
     // Camera follow
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+
+    // Spawn enemies — after combat + grapple exist
+    const TEMP_GROUND_Y = 864;
+    this.spawnEnemies(TEMP_GROUND_Y, ground);
 
     // Instant-kill if player falls below world
     this.events.on('update', () => {
@@ -117,9 +123,6 @@ export class Level01Scene extends Phaser.Scene {
 
     // Launch UIScene overlay
     this.scene.launch('UIScene');
-
-    // Wire grapple system
-    this.grapple = new GrappleSystem(this, this.player, ground, this.enemiesGroup);
 
     // Listen for player death
     this.game.events.on('player-died', this.handlePlayerDeath, this);
@@ -144,16 +147,64 @@ export class Level01Scene extends Phaser.Scene {
     });
   }
 
-  private spawnEnemies(groundY: number): void {
-    const spawnY = groundY - 32; // center of enemy body (64px tall, bottom on ground)
-    const enemies: DummyEnemy[] = [
-      new DummyEnemy(this, 300,  spawnY),                  // 1: close range — test claw
-      new DummyEnemy(this, 700,  spawnY),                  // 2: after first gap — test shuriken across gap
-      new DummyEnemy(this, 1150, spawnY),                  // 3: test claw while running
-      new DummyEnemy(this, 1650, groundY - 128 - 32),      // 4: elevated — test shuriken arc aim-up
-      new DummyEnemy(this, 2200, spawnY),                  // 5: after wall jump shaft — mid-range shuriken
+  private spawnEnemies(groundY: number, groundLayer: Phaser.Tilemaps.TilemapLayer): void {
+    const spawnY = groundY - 32; // centre of body (64px tall, bottom on ground)
+    const positions = [
+      { x: 400,  y: spawnY },
+      { x: 800,  y: spawnY },
+      { x: 1300, y: spawnY },
+      { x: 1900, y: spawnY },
+      { x: 2400, y: spawnY },
     ];
-    enemies.forEach(e => this.enemiesGroup.add(e));
+
+    positions.forEach(({ x, y }) => {
+      const granny = new GrannyMelee(
+        this,
+        x, y,
+        this.player,
+        groundLayer,
+        this.combatSystem.getShurikenGroup(),
+        this.grapple,
+      );
+      this.enemiesGroup.add(granny);
+      this.grannies.push(granny);
+
+      // Wire granny attack hitbox → player damage
+      this.physics.add.overlap(
+        granny.attackHitbox,
+        this.player,
+        () => {
+          if ((granny.attackHitbox.body as Phaser.Physics.Arcade.Body).enable) {
+            this.player.takeDamage(BALANCE.GRANNY_ATTACK_DAMAGE);
+          }
+        },
+      );
+
+      // Collide granny with ground so she walks on platforms
+      this.physics.add.collider(granny, groundLayer);
+    });
+
+    // Body-detection alert: when a granny dies, nearby grannies with LOS become alert
+    this.events.on('enemy-died', ({ x, y }: { x: number; y: number }) => {
+      this.grannies.forEach(g => {
+        if (!g.active || g.isAlerted()) return;
+        const dist = Phaser.Math.Distance.Between(g.x, g.y, x, y);
+        if (dist <= BALANCE.GRANNY_BODY_ALERT_RADIUS && g.hasLineOfSightTo(x, y)) {
+          g.alert();
+        }
+      });
+    });
+
+    // Alert propagation: when any granny becomes alert, nearby passive grannies also alert
+    this.events.on('enemy-alerted', ({ x, y }: { x: number; y: number }) => {
+      this.grannies.forEach(g => {
+        if (!g.active || g.isAlerted()) return;
+        const dist = Phaser.Math.Distance.Between(g.x, g.y, x, y);
+        if (dist <= BALANCE.GRANNY_PROPAGATION_RADIUS) {
+          g.alert();
+        }
+      });
+    });
   }
 
   private onCheckpointOverlap(cp: Checkpoint): void {
