@@ -64,7 +64,7 @@ export class DirtyHarry extends Phaser.Physics.Arcade.Sprite implements IDamagea
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setGravityY(BALANCE.GRAVITY);
     body.setSize(36, 60);
-    body.setOffset(22, 3); // feet at ~63px in 94px frame; offset+height=63 aligns sprite bottom with ground
+    body.setOffset(22, 31); // feet at ~91px in 94px frame; calibrated via alignment tool
 
     this.health = BALANCE.GRANNY_HEALTH;
     this.healthBar = new HealthBar(scene, 40, -54);
