@@ -45,7 +45,7 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
     shurikenGroup: Phaser.Physics.Arcade.Group,
     grappleSystem: GrappleSystem,
   ) {
-    super(scene, x, y, 'pixel');
+    super(scene, x, y, 'evilgranny');
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -56,15 +56,15 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
     this._shurikenGroup = shurikenGroup;
     this._grappleSystem = grappleSystem;
 
-    // Placeholder tinted rectangle (swapped to sprite in Task 8)
-    this.setDisplaySize(48, 64);
-    this.setTint(0xaa44ff);
+    this.setTexture('evilgranny');
+    this.setScale(2);
     this.setDepth(10);
+    this.play('granny_idle');
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setGravityY(BALANCE.GRAVITY);
     body.setSize(36, 60);
-    body.setOffset(6, 2);
+    body.setOffset(14, 4);
 
     this.health = BALANCE.GRANNY_HEALTH;
     this.healthBar = new HealthBar(scene, 48, -72);
@@ -195,6 +195,7 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
     if (this.patrolPauseTimer > 0) {
       this.patrolPauseTimer -= delta;
       body.setVelocityX(0);
+      this.play('granny_idle', true);
       return;
     }
 
@@ -215,6 +216,7 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
     // Walk
     body.setVelocityX(BALANCE.GRANNY_PATROL_SPEED * this.patrolDir);
     this.setFacing(this.patrolDir === 1 ? 'right' : 'left');
+    this.play('granny_walk', true);
 
     // Random mid-patrol pause
     this.patrolStepTimer -= delta;
@@ -243,6 +245,7 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
     // Chase
     const vx = BALANCE.GRANNY_ALERT_SPEED * (this._player.x >= this.x ? 1 : -1);
     body.setVelocityX(vx);
+    this.play('granny_walk', true);
   }
 
   private updateTelegraph(delta: number): void {
@@ -269,14 +272,12 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
   private updateHurt(delta: number): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
+    this.play('granny_hurt', true);
     this.stateTimer -= delta;
-
-    // Flash white
     const flash = Math.floor(this.stateTimer / 60) % 2 === 0;
-    this.setTint(flash ? 0xffffff : 0xaa44ff);
-
+    this.setTint(flash ? 0xffffff : 0xdddddd);
     if (this.stateTimer <= 0) {
-      this.setTint(0xaa44ff);
+      this.clearTint();
       this.transitionTo(this.everAlerted ? 'ALERT' : 'PATROL');
     }
   }
@@ -319,6 +320,7 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
         (this.attackHitbox.body as Phaser.Physics.Arcade.Body).enable = false;
         this.cone.destroy();
         this.healthBar.destroy();
+        this.play('granny_dead', true);
         // Emit for Level01Scene body-detection + propagation wiring
         this.scene.events.emit('enemy-died', { x: this.x, y: this.y });
         this.scene.time.delayedCall(600, () => {
@@ -336,11 +338,13 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
       case 'TELEGRAPH':
         this.stateTimer = BALANCE.GRANNY_TELEGRAPH_MS;
         body.setVelocityX(0);
+        this.play('granny_telegraph', true);
         break;
 
       case 'SWING':
         this.stateTimer = BALANCE.GRANNY_SWING_MS;
         (this.attackHitbox.body as Phaser.Physics.Arcade.Body).enable = true;
+        this.play('granny_swing', true);
         break;
 
       case 'RECOVERY':

@@ -23,6 +23,12 @@ export class PreloadScene extends Phaser.Scene {
     // Shuriken — cropped single frame (48×48) from top-right of Sprites Shurikens.png
     this.load.image('shuriken', 'assets/Sprites/Shuriken.png');
 
+    // Evil Granny spritesheet (64×64 frames, 16 per row)
+    this.load.spritesheet('evilgranny',
+      'assets/Sprites/Sprites EvilGrandma TRex.png',
+      { frameWidth: 64, frameHeight: 64 },
+    );
+
     // Tilemap — Tiled JSON export
     this.load.tilemapTiledJSON('level01', 'assets/tiles/level01.json');
 
@@ -152,6 +158,44 @@ export class PreloadScene extends Phaser.Scene {
       key: 'claw',
       frames: anims.generateFrameNumbers('catninja', { start: 80, end: 83 }),
       frameRate: 16,
+      repeat: 0,
+    });
+
+    // --- Evil Granny ---
+    anims.create({
+      key: 'granny_idle',
+      frames: anims.generateFrameNumbers('evilgranny', { start: 0, end: 3 }),
+      frameRate: 6,
+      repeat: -1,
+    });
+    anims.create({
+      key: 'granny_walk',
+      frames: anims.generateFrameNumbers('evilgranny', { start: 32, end: 39 }),
+      frameRate: 10,
+      repeat: -1,
+    });
+    anims.create({
+      key: 'granny_telegraph',
+      frames: anims.generateFrameNumbers('evilgranny', { start: 48, end: 55 }),
+      frameRate: 10,
+      repeat: 0,
+    });
+    anims.create({
+      key: 'granny_swing',
+      frames: anims.generateFrameNumbers('evilgranny', { start: 64, end: 71 }),
+      frameRate: 14,
+      repeat: 0,
+    });
+    anims.create({
+      key: 'granny_hurt',
+      frames: anims.generateFrameNumbers('evilgranny', { start: 80, end: 83 }),
+      frameRate: 10,
+      repeat: 0,
+    });
+    anims.create({
+      key: 'granny_dead',
+      frames: anims.generateFrameNumbers('evilgranny', { start: 96, end: 103 }),
+      frameRate: 8,
       repeat: 0,
     });
   }
