@@ -25,13 +25,9 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
 
   // Detection
   private readonly cone: ConeOfVision;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private readonly _player: Player;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private readonly _groundLayer: Phaser.Tilemaps.TilemapLayer;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private readonly _shurikenGroup: Phaser.Physics.Arcade.Group;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private readonly _grappleSystem: GrappleSystem;
 
   // Visuals
@@ -150,12 +146,51 @@ export class GrannyMelee extends Phaser.Physics.Arcade.Sprite implements IDamage
   // ── State handlers ───────────────────────────────────────────────────────────
 
   private updatePatrol(delta: number): void {
-    // Fields referenced here to satisfy noUnusedLocals (used by other systems)
+    // _groundLayer is used only in the constructor for ConeOfVision
     void this._groundLayer;
-    void this._shurikenGroup;
-    void this._grappleSystem;
 
     const body = this.body as Phaser.Physics.Arcade.Body;
+
+    // Cone detection — player
+    if (this.cone.check(
+      this.x, this.y,
+      this._facing,
+      BALANCE.GRANNY_CONE_PASSIVE_ANGLE,
+      BALANCE.GRANNY_CONE_PASSIVE_RANGE,
+      this._player.x, this._player.y,
+    )) {
+      this.alert();
+      return;
+    }
+
+    // Cone detection — shurikens
+    const shurikens = this._shurikenGroup.getChildren() as Array<Phaser.Physics.Arcade.Sprite & { active: boolean }>;
+    for (const s of shurikens) {
+      if (!s.active) continue;
+      if (this.cone.check(
+        this.x, this.y,
+        this._facing,
+        BALANCE.GRANNY_CONE_PASSIVE_ANGLE,
+        BALANCE.GRANNY_CONE_PASSIVE_RANGE,
+        s.x, s.y,
+      )) {
+        this.alert();
+        return;
+      }
+    }
+
+    // Cone detection — grapple hook in flight
+    const hookPos = this._grappleSystem.getHookPosition();
+    if (hookPos && this.cone.check(
+      this.x, this.y,
+      this._facing,
+      BALANCE.GRANNY_CONE_PASSIVE_ANGLE,
+      BALANCE.GRANNY_CONE_PASSIVE_RANGE,
+      hookPos.x, hookPos.y,
+    )) {
+      this.alert();
+      return;
+    }
 
     if (this.patrolPauseTimer > 0) {
       this.patrolPauseTimer -= delta;
